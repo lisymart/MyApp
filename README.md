@@ -1,2 +1,0 @@
-pedometer-bakalarka
-===================
