@@ -1,138 +1,176 @@
 package com.example.myapp;
 
-import org.openintents.sensorsimulator.hardware.Sensor;
-import org.openintents.sensorsimulator.hardware.SensorEvent;
-import org.openintents.sensorsimulator.hardware.SensorEventListener;
-import org.openintents.sensorsimulator.hardware.SensorManagerSimulator;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Vector;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Paint.FontMetrics;
+import android.graphics.Point;
+import android.graphics.Rect;
+import android.graphics.RectF;
+import android.graphics.Typeface;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.ImageView;
 import android.widget.TextView;
 
-@SuppressLint("NewApi")
-public class MainActivity extends Activity implements SensorEventListener {
-    private float mLastX, mLastY, mLastZ;
-    private boolean mInitialized;
-    private SensorManagerSimulator mSensorManager;
+public class MainActivity extends Activity {
+	static final String CALIB_FILE = "calib.txt";
+	public static final int IDX_X = 0;
+	public static final int IDX_Y = 1;
+	public static final int IDX_Z = 2;
+	
+    private GraphView mGraphView;
+    private SensorManager mSensorManager;
     private Sensor mAccelerometer;
     private Sensor mGyroscope;
     private Sensor mCompass;
-
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        mInitialized = false;
-        mSensorManager = SensorManagerSimulator.getSystemService(this, SENSOR_SERVICE);
-        mSensorManager.connectSimulator();        
         
+        mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+
         mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        mSensorManager.registerListener(this, mGyroscope, SensorManager.SENSOR_DELAY_NORMAL);
+
         mCompass = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-        mSensorManager.registerListener(this, mCompass, SensorManager.SENSOR_DELAY_NORMAL);
+
         
-        Log.i("Ahoj", mAccelerometer.toString());
-        Log.i("Ahoj", mCompass.toString());
-        if (mGyroscope == null) Log.i("Ahoj", "Gyroskop je furt null.");
+        mGraphView = new GraphView(this);
+        setContentView(mGraphView);
         
     }
 
     protected void onResume() {
         super.onResume();
-               
+            mSensorManager.registerListener(mGraphView, mAccelerometer,
+                            SensorManager.SENSOR_DELAY_FASTEST);
+       
     }
+    
+    @Override
+    protected void onStop() {
+    	super.onStop();
+            mSensorManager.unregisterListener(mGraphView);
+            finish();
+            System.exit(0);
+            
+    }
+    
+    
+    
     protected void onPause() {
-        super.onPause();
-        mSensorManager.unregisterListener(this);
-        mSensorManager.disconnectSimulator();
+    	super.onPause();
+    	mSensorManager.unregisterListener(mGraphView);
         
     }
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        if (event.sensor == mAccelerometer) {
-        	float values[] = event.values;
-        	TextView tvX= (TextView)findViewById(R.id.ax_axis);
-            TextView tvY= (TextView)findViewById(R.id.ay_axis);
-            TextView tvZ= (TextView)findViewById(R.id.az_axis);
-            
-            float x = values[0];
-            float y = values[1];
-            float z = values[2];
-            
-            if (!mInitialized) {
-                mLastX = x +1;
-                mLastY = y;
-                mLastZ = z;
-                tvX.setText("0.0");
-                tvY.setText("0.0");
-                tvZ.setText("0.0");
-                mInitialized = true;
-            } else {
-                float deltaX = Math.abs(mLastX - x);
-                float deltaY = Math.abs(mLastY - y);
-                float deltaZ = Math.abs(mLastZ - z);
-                mLastX = x;
-                mLastY = y;
-                mLastZ = z;
-                tvX.setText(Float.toString(deltaX));
-                tvY.setText(Float.toString(deltaY));
-                tvZ.setText(Float.toString(deltaZ));  
-                Log.i("Ahoj", "1. if");
-                
-            }
+   
+    private boolean readStoredCalibrationParameters() {
+		gyroXDrift = 0.0;
+		gyroYDrift = 0.0;
+		gyroZDrift = 0.0;
+		stationaryAverageGravity = 0.0;
+		averageCompassLength = 0.0;
+		compassOffset = new double[3];
+		vectorZero( compassOffset );
+		File dir = getFilesDir();
+		File calibFile = new File( dir, CALIB_FILE );
+		try {
+			BufferedReader rdr = new BufferedReader( new FileReader( calibFile ));
+			String line = null;
+			while( ( line = rdr.readLine() ) != null ) {
+				if( line.startsWith( "gyroXDrift="))
+					gyroXDrift = getCalibValue( line );
+				else
+				if( line.startsWith( "gyroYDrift="))
+					gyroYDrift = getCalibValue( line );
+				else
+				if( line.startsWith( "gyroZDrift="))
+					gyroZDrift = getCalibValue( line );
+				else
+				if( line.startsWith( "compassOffsetX="))
+					compassOffset[IDX_X] = getCalibValue( line );
+				else
+				if( line.startsWith( "compassOffsetY="))
+					compassOffset[IDX_Y] = getCalibValue( line );
+				else
+				if( line.startsWith( "compassOffsetZ="))
+					compassOffset[IDX_Z] = getCalibValue( line );
+				else
+				if( line.startsWith( "stationaryAverageGravity="))
+					stationaryAverageGravity = getCalibValue( line );
+				else
+				if( line.startsWith( "averageCompassLength="))
+					averageCompassLength = getCalibValue( line );
+			}
+		} catch( IOException ex ) {
+			Log.d("read_calib", "readStoredCalibrationParameters: IOException",ex );
+			return false;
+		}
+		return true;
+	}
+    
+    private double getCalibValue( String line ) {
+		int idx = line.indexOf( '=');
+		String valStr = line.substring( idx+1 );
+		double val = 0.0;
+		try {
+			val = Double.parseDouble( valStr );
+		} catch( NumberFormatException ex ) {
+			Log.e( "get_calib_values", "Invalid calibration line: "+line);
+		}
+		return val;
+	}
         
-        } else if (mGyroscope != null && event.sensor == mGyroscope) {
-        	TextView tvX= (TextView)findViewById(R.id.gx_axis);
-            TextView tvY= (TextView)findViewById(R.id.gy_axis);
-            TextView tvZ= (TextView)findViewById(R.id.gz_axis);
-            
-        	try{
-        	float values[] = event.values;            
-            float x = values[0];
-            float y = values[1];
-            float z = values[2];
-            
-            if (!mInitialized) {
-                tvX.setText("0.0");
-                tvY.setText("0.0");
-                tvZ.setText("0.0");
-                mInitialized = true;
-            } else {
-                tvX.setText(Float.toString(x));
-                tvY.setText(Float.toString(y));
-                tvZ.setText(Float.toString(z));    
-                Log.i("Ahoj", "2. if");
-            }
-        	} catch (Exception e) {
-        		tvX.setText("No Data");
-        		tvX.setText("From");
-        		tvX.setText("Gyroscope");
-        	}
-        	
-        	
-        } else if (event.sensor == mCompass){
-        	float values[] = event.values;
-        	TextView tvX = (TextView)findViewById(R.id.cx_axis);
-        	TextView tvY = (TextView)findViewById(R.id.cy_axis);
-        	TextView tvZ = (TextView)findViewById(R.id.cz_axis);
-        	float x = values[0];
-            float y = values[1];
-            float z = values[2];
-                 tvX.setText(Float.toString(x));
-                 tvY.setText(Float.toString(y));
-                 tvZ.setText(Float.toString(z));
-                 Log.i("Ahoj", "3. if");
-                	 
-        }   	
-    }      
+private void vectorZero( double vec[] ) {
+		vec[IDX_X] = 0.0;
+		vec[IDX_Y] = 0.0;
+		vec[IDX_Z] = 0.0;
+	}
+    
+    
+    private void writeCalibrationParameters() {
+		try {
+			File dir = getFilesDir();
+			File calibFile = new File( dir, CALIB_FILE );
+			PrintWriter pw = new PrintWriter( new FileWriter( calibFile ));
+			pw.println( "gyroXDrift="+Double.toString( gyroXDrift ));
+			pw.println( "gyroYDrift="+Double.toString( gyroYDrift ));
+			pw.println( "gyroZDrift="+Double.toString( gyroZDrift ));
+			pw.println( "compassOffsetX="+Double.toString( compassOffset[IDX_X] ));
+			pw.println( "compassOffsetY="+Double.toString( compassOffset[IDX_Y] ));
+			pw.println( "compassOffsetZ="+Double.toString( compassOffset[IDX_Z] ));
+			pw.println( "stationaryAverageGravity="+Double.toString(stationaryAverageGravity));
+			pw.println( "averageCompassLength="+Double.toString( averageCompassLength));
+			pw.close();
+		} catch( IOException ex ) {
+			Log.e( "calib", "writeCalibrationParameters",ex);
+		}
+	}
+    
+ 
+    private double gyroXDrift;
+    private double gyroYDrift;
+    private double gyroZDrift;
+    private double compassOffset[];
+    private double stationaryAverageGravity = 0.0;
+    private double averageCompassLength = 0.0;
 }
 
