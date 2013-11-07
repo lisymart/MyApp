@@ -50,22 +50,15 @@ public class GraphView extends View implements SensorEventListener {
     private ArrayList<Float> cPointsZ = new ArrayList<Float>();
     private float[] points ;
     private float x = 0;
-    private float[] axPoints;
-    private float[] ayPoints;
-    private float[] azPoints;
-    private float[] gxPoints;
-    private float[] gyPoints;
-    private float[] gzPoints;
-    private float[] cxPoints;
-    private float[] cyPoints;
-    private float[] czPoints;
+    private float[]mPoints;
+
 
     public GraphView(Context context) {
             
             super(context);
-            mColors[0] = Color.argb(192, 255, 64, 64);     		 // red
-            mColors[1] = Color.argb(192, 64, 128, 64); 			 // green
-            mColors[2] = Color.argb(192, 64, 64, 255);      	 // blue 
+            mColors[0] = Color.argb(192, 255, 64, 64);           // red
+            mColors[1] = Color.argb(192, 64, 128, 64);           // green
+            mColors[2] = Color.argb(192, 64, 64, 255);           // blue 
             mColors[3] = Color.argb(192, 64, 255, 255);          // light blue
             mColors[4] = Color.argb(192, 128, 64, 128);          // violet
             mColors[5] = Color.argb(192, 255, 255, 64);          // yellow
@@ -73,22 +66,11 @@ public class GraphView extends View implements SensorEventListener {
             mPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
             mRect.set(-0.5f, -0.5f, 0.5f, 0.5f);
             mPath.arcTo(mRect, 0, 1000);  
-            
            
             DisplayMetrics metrics = this.getResources().getDisplayMetrics();
             width = metrics.widthPixels;
             height = metrics.heightPixels;
-            axPoints = new float[width * 4];
-            ayPoints = new float[width * 4];
-            azPoints = new float[width * 4];  
-            
-            gxPoints = new float[width * 4];
-            gyPoints = new float[width * 4];
-            gzPoints = new float[width * 4]; 
-            
-            cxPoints = new float[width * 4];
-            cyPoints = new float[width * 4];
-            czPoints = new float[width * 4]; 
+            mPoints = new float[width * 4];
             
             aPointsX.add(Float.valueOf(0));
             aPointsX.add(Float.valueOf(130));
@@ -98,18 +80,18 @@ public class GraphView extends View implements SensorEventListener {
             aPointsZ.add(Float.valueOf(130));
 
             gPointsX.add(Float.valueOf(0));
-            gPointsX.add(Float.valueOf(350));
+            gPointsX.add(Float.valueOf(360));
             gPointsY.add(Float.valueOf(0));
-            gPointsY.add(Float.valueOf(350));
+            gPointsY.add(Float.valueOf(360));
             gPointsZ.add(Float.valueOf(0));
-            gPointsZ.add(Float.valueOf(350));
+            gPointsZ.add(Float.valueOf(360));
             
             cPointsX.add(Float.valueOf(0));
-            cPointsX.add(Float.valueOf(580));
+            cPointsX.add(Float.valueOf(590));
             cPointsY.add(Float.valueOf(0));
-            cPointsY.add(Float.valueOf(580));
+            cPointsY.add(Float.valueOf(590));
             cPointsZ.add(Float.valueOf(0));
-            cPointsZ.add(Float.valueOf(580));
+            cPointsZ.add(Float.valueOf(590));
             }
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
@@ -150,14 +132,14 @@ public class GraphView extends View implements SensorEventListener {
                     cavas.drawLine(0, 360, width, 360, paint);
                     cavas.drawLine(5, 270, 5, 450, paint);
                     cavas.drawText("0", 7, 360, paint);
-                    cavas.drawText("10", 7, 280, paint);
-                    cavas.drawText("-10", 7, 450, paint);
+                    cavas.drawText("5", 7, 280, paint);
+                    cavas.drawText("-5", 7, 450, paint);
                     cavas.drawText("Gyroscope values : ", 5, 245, paint);
                     cavas.drawLine(0, 590, width, 590, paint);
                     cavas.drawLine(5, 500, 5, 680, paint);
                     cavas.drawText("0", 7, 590, paint);
-                    cavas.drawText("+ val", 7, 510, paint);
-                    cavas.drawText("- val", 7, 680, paint);
+                    cavas.drawText("90", 7, 510, paint);
+                    cavas.drawText("- 90", 7, 680, paint);
                     cavas.drawText("Compass values : ", 5, 475, paint);
                     paint.setColor(mColors[0]);
                     cavas.drawLine(0, 232, width, 230, paint);
@@ -167,58 +149,63 @@ public class GraphView extends View implements SensorEventListener {
                     // Accelerometer values plot
                     if (aValues[0] > 10) aValues[0] = 10; 
                     if (aValues[0] < -10) aValues[0] = -10;
-                    axPoints = toArray( -aValues[0] * 9 + 130, aPointsX);
+                    mPoints = toArray( -aValues[0] * 9 + 130, aPointsX);
                     paint.setColor(mColors[2]);                       
                     cavas.drawText("X-Axis : " + aValues[0] , 5, 30, paint);
-                    cavas.drawLines(axPoints, paint); 
+                    cavas.drawLines(mPoints, paint); 
                     
                     if (aValues[1] > 10) aValues[1] = 10; 
                     if (aValues[1] < -10) aValues[1] = -10;
-                    ayPoints = toArray( -aValues[1] * 9 + 130, aPointsY);
+                    mPoints = toArray( -aValues[1] * 9 + 130, aPointsY);
                     paint.setColor(mColors[1]);
                     cavas.drawText("Y-Axis : " + aValues[1] , 170, 30, paint);
-                    cavas.drawLines(ayPoints, paint);
+                    cavas.drawLines(mPoints, paint);
 
                     if (aValues[2] > 10) aValues[2] = 10; 
                     if (aValues[2] < -10) aValues[2] = -10;
-                    azPoints = toArray( -aValues[2] * 9 + 130, aPointsZ);
+                    mPoints = toArray( -aValues[2] * 9 + 130, aPointsZ);
                     paint.setColor(mColors[4]);
                     cavas.drawText("Z-Axis : " + aValues[2] , 340, 30, paint);
-                    cavas.drawLines(azPoints,  paint);    
+                    cavas.drawLines(mPoints,  paint);    
                     
                     // Gyro values plot
-                    
+                    if (gValues[0] > 5) gValues[0] = 5; 
+                    if (gValues[0] < -5) gValues[0] = -5;
                     paint.setColor(mColors[2]);                       
                     cavas.drawText("X-Axis : " + gValues[0] , 5, 260, paint);  
-                    gxPoints = toArray(-gValues[0] * 10 + 350, gPointsX);
-                    cavas.drawLines(gxPoints, paint);
+                    mPoints = toArray(-gValues[0] * 18 + 360, gPointsX);
+                    cavas.drawLines(mPoints, paint);
 
+                    if (gValues[1] > 5) gValues[1] = 5; 
+                    if (gValues[1] < -5) gValues[1] = -5;
                     paint.setColor(mColors[1]);
                     cavas.drawText("Y-Axis : " + gValues[1] , 170, 260, paint);
-                    gyPoints = toArray(-gValues[1] * 10 + 350, gPointsY);
-                    cavas.drawLines(gyPoints, paint);
+                    mPoints = toArray(-gValues[1] * 18 + 360, gPointsY);
+                    cavas.drawLines(mPoints, paint);
 
+                    if (gValues[2] > 5) gValues[2] = 5; 
+                    if (gValues[2] < -5) gValues[2] = -5;
                     paint.setColor(mColors[4]);
                     cavas.drawText("Z-Axis : " + gValues[2] , 340, 260, paint);
-                    gzPoints = toArray( -gValues[2] * 10 + 350, gPointsZ);
-                    cavas.drawLines(gzPoints, paint);
+                    mPoints = toArray( -gValues[2] * 18 + 360, gPointsZ);
+                    cavas.drawLines(mPoints, paint);
                     
                     // Compass values plot   
 
                     paint.setColor(mColors[2]);                       
                     cavas.drawText("X-Axis : " + cValues[0] , 5, 490, paint);        
-                    cxPoints = toArray( -cValues[0] /2 + 580, cPointsX);
-                    cavas.drawLines(cxPoints, paint);
+                    mPoints = toArray( -cValues[0]  + 590, cPointsX);
+                    cavas.drawLines(mPoints, paint);
 
                     paint.setColor(mColors[1]);
                     cavas.drawText("Y-Axis : " + cValues[1] , 170, 490, paint);
-                    cyPoints = toArray( -cValues[1] /2 + 580, cPointsY);
-                    cavas.drawLines(cyPoints, paint);
+                    mPoints = toArray( -cValues[1]  + 590, cPointsY);
+                    cavas.drawLines(mPoints, paint);
 
                     paint.setColor(mColors[4]);
                     cavas.drawText("Z-Axis : " + cValues[2] , 340, 490, paint);
-                    czPoints = toArray( -cValues[2] /2 + 580, cPointsZ);
-                    cavas.drawLines(czPoints, paint);
+                    mPoints = toArray( -cValues[2]  + 590, cPointsZ);
+                    cavas.drawLines(mPoints, paint);
                     
 
                     canvas.drawBitmap(mBitmap, 0, 0, null); 
