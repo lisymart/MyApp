@@ -1,7 +1,6 @@
-package com.example.myapp;
+package cz.muni.fi.myapp;
 
 import java.util.ArrayList;
-import java.util.Vector;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -15,31 +14,24 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.DisplayMetrics;
-import android.util.Log;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
 
 
-public class GraphView extends View implements SensorEventListener {
+public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
     private Bitmap mBitmap;
     private Paint mPaint = new Paint();
     private Path mPath = new Path();
     private RectF mRect = new RectF();
     private int mColors[] = new int[3 * 2];
     private Canvas mCanvas = new Canvas();
-    private float mLastX;
     private float[] mYOffset = new float[4];
     private float mScale[] = new float[3];    
-    private float mWidth;
-    private float mMaxX;
-    private float mHeight;
-    private float aValues[];
-    private float gValues[];
-    private float cValues[];
     private int counter = 0;
     private float val = 0 ;
     private int  width;
-    private int height;
-    private ArrayList<Float> aPointsX = new ArrayList<Float>();
+    ArrayList<Float> aPointsX = new ArrayList<Float>();
     private ArrayList<Float> aPointsY = new ArrayList<Float>();
     private ArrayList<Float> aPointsZ = new ArrayList<Float>();
     private ArrayList<Float> gPointsX = new ArrayList<Float>();
@@ -69,7 +61,6 @@ public class GraphView extends View implements SensorEventListener {
            
             DisplayMetrics metrics = this.getResources().getDisplayMetrics();
             width = metrics.widthPixels;
-            height = metrics.heightPixels;
             mPoints = new float[width * 4];
             
             aPointsX.add(Float.valueOf(0));
@@ -92,6 +83,7 @@ public class GraphView extends View implements SensorEventListener {
             cPointsY.add(Float.valueOf(590));
             cPointsZ.add(Float.valueOf(0));
             cPointsZ.add(Float.valueOf(590));
+            this.setKeepScreenOn(true);
             }
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
@@ -105,14 +97,6 @@ public class GraphView extends View implements SensorEventListener {
             mScale[0] = -(h * 0.5f * (1.0f / (SensorManager.STANDARD_GRAVITY * 2)));
             mScale[1] = -(h * 0.5f * (1.0f / (SensorManager.MAGNETIC_FIELD_EARTH_MAX)));
             mScale[2] = -(h * 0.5f * (1.0f / 100000));
-            mWidth = w;
-            mHeight = h;
-            if (mWidth < mHeight) {
-                    mMaxX = w;
-            } else {
-                    mMaxX = w - 50;
-            }
-            mLastX = mMaxX;
             super.onSizeChanged(w, h, oldw, oldh);
     }
 
@@ -242,23 +226,21 @@ public class GraphView extends View implements SensorEventListener {
         }
         return points;
     }
-
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-                    if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-                        aValues = event.values.clone();
-                    } else 
-                    if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
-                        gValues = event.values.clone();
-                    } else 
-                    if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
-                        cValues = event.values.clone();
-                    }
-                    counter++;
-                    invalidate();
-            }
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-    }
-
+    
+	@Override
+	public void surfaceChanged(SurfaceHolder holder, int format, int width,
+			int height) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void surfaceCreated(SurfaceHolder holder) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void surfaceDestroyed(SurfaceHolder holder) {
+		// TODO Auto-generated method stub
+		
+	}
 }
