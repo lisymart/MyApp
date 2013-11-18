@@ -1,7 +1,6 @@
 package cz.muni.fi.myapp;
 
 import java.util.ArrayList;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -10,25 +9,21 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
+import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.View;
 
 
 public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
+	float panelHeight;
+	float panelWidth;
     private Bitmap mBitmap;
     private Paint mPaint = new Paint();
     private Path mPath = new Path();
     private RectF mRect = new RectF();
     private int mColors[] = new int[3 * 2];
     private Canvas mCanvas = new Canvas();
-    private float[] mYOffset = new float[4];
-    private float mScale[] = new float[3];    
-    private int counter = 0;
     private float val = 0 ;
     private int  width;
     ArrayList<Float> aPointsX = new ArrayList<Float>();
@@ -43,11 +38,16 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
     private float[] points ;
     private float x = 0;
     private float[]mPoints;
+    private int aCounter = 0;
+    private int gCounter = 0;
+    private int cCounter = 0;
 
 
-    public GraphView(Context context) {
+    public GraphView(Context context, AttributeSet attrs) {
+            super(context, attrs);
+            getHolder().addCallback(this);
+            setFocusable(true);          
             
-            super(context);
             mColors[0] = Color.argb(192, 255, 64, 64);           // red
             mColors[1] = Color.argb(192, 64, 128, 64);           // green
             mColors[2] = Color.argb(192, 64, 64, 255);           // blue 
@@ -85,23 +85,9 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
             cPointsZ.add(Float.valueOf(590));
             this.setKeepScreenOn(true);
             }
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-            mBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565);
-            mCanvas.setBitmap(mBitmap);
-            mCanvas.drawColor(0xFFFFFFFF);
-            mYOffset[0] = h * 0.5f;
-            mYOffset[1] = h * 0.25f;
-            mYOffset[2] = h * 0.25f;
-            mYOffset[3] = h * 0.75f;
-            mScale[0] = -(h * 0.5f * (1.0f / (SensorManager.STANDARD_GRAVITY * 2)));
-            mScale[1] = -(h * 0.5f * (1.0f / (SensorManager.MAGNETIC_FIELD_EARTH_MAX)));
-            mScale[2] = -(h * 0.5f * (1.0f / 100000));
-            super.onSizeChanged(w, h, oldw, oldh);
-    }
 
-    @Override
-    protected void onDraw(Canvas canvas) {
+
+    public void draw(Canvas canvas, long stamp, int sensorType, float[] values ) {
             if (mBitmap != null) {
                     final Paint paint = mPaint;
                     final Canvas cavas = mCanvas;
@@ -130,73 +116,80 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
                     cavas.drawLine(0, 462, width, 462, paint);
                     
                     
-                    // Accelerometer values plot
-                    if (aValues[0] > 10) aValues[0] = 10; 
-                    if (aValues[0] < -10) aValues[0] = -10;
-                    mPoints = toArray( -aValues[0] * 9 + 130, aPointsX);
-                    paint.setColor(mColors[2]);                       
-                    cavas.drawText("X-Axis : " + aValues[0] , 5, 30, paint);
-                    cavas.drawLines(mPoints, paint); 
+                    switch ( sensorType ) {
+                    case Sensor.TYPE_ACCELEROMETER: 
+                    	// Accelerometer values plot
+                    	if (values[0] > 10) values[0] = 10; 
+                    	if (values[0] < -10) values[0] = -10;
+                    	mPoints = toArray( aCounter, -values[0] * 9 + 130, aPointsX);
+                    	paint.setColor(mColors[2]);                       
+                    	cavas.drawText("X-Axis : " + values[0] , 5, 30, paint);
+                    	cavas.drawLines(mPoints, paint); 
                     
-                    if (aValues[1] > 10) aValues[1] = 10; 
-                    if (aValues[1] < -10) aValues[1] = -10;
-                    mPoints = toArray( -aValues[1] * 9 + 130, aPointsY);
-                    paint.setColor(mColors[1]);
-                    cavas.drawText("Y-Axis : " + aValues[1] , 170, 30, paint);
-                    cavas.drawLines(mPoints, paint);
+                    	if (values[1] > 10) values[1] = 10; 
+                    	if (values[1] < -10) values[1] = -10;
+                    	mPoints = toArray(aCounter,  -values[1] * 9 + 130, aPointsY);
+                    	paint.setColor(mColors[1]);
+                    	cavas.drawText("Y-Axis : " + values[1] , 170, 30, paint);
+                    	cavas.drawLines(mPoints, paint);
 
-                    if (aValues[2] > 10) aValues[2] = 10; 
-                    if (aValues[2] < -10) aValues[2] = -10;
-                    mPoints = toArray( -aValues[2] * 9 + 130, aPointsZ);
-                    paint.setColor(mColors[4]);
-                    cavas.drawText("Z-Axis : " + aValues[2] , 340, 30, paint);
-                    cavas.drawLines(mPoints,  paint);    
+                    	if (values[2] > 10) values[2] = 10; 
+                    	if (values[2] < -10) values[2] = -10;
+                    	mPoints = toArray( aCounter, -values[2] * 9 + 130, aPointsZ);
+                    	paint.setColor(mColors[4]);
+                    	cavas.drawText("Z-Axis : " + values[2] , 340, 30, paint);
+                    	cavas.drawLines(mPoints,  paint);  
+                    	break;
                     
-                    // Gyro values plot
-                    if (gValues[0] > 5) gValues[0] = 5; 
-                    if (gValues[0] < -5) gValues[0] = -5;
-                    paint.setColor(mColors[2]);                       
-                    cavas.drawText("X-Axis : " + gValues[0] , 5, 260, paint);  
-                    mPoints = toArray(-gValues[0] * 18 + 360, gPointsX);
-                    cavas.drawLines(mPoints, paint);
+                    case Sensor.TYPE_GYROSCOPE: 
+                    	// Gyro values plot
+                    	if (values[0] > 5) values[0] = 5; 
+                    	if (values[0] < -5) values[0] = -5;
+                    	paint.setColor(mColors[2]);                       
+                    	cavas.drawText("X-Axis : " + values[0] , 5, 260, paint);  
+                    	mPoints = toArray(gCounter, -values[0] * 18 + 360, gPointsX);
+                    	cavas.drawLines(mPoints, paint);
 
-                    if (gValues[1] > 5) gValues[1] = 5; 
-                    if (gValues[1] < -5) gValues[1] = -5;
-                    paint.setColor(mColors[1]);
-                    cavas.drawText("Y-Axis : " + gValues[1] , 170, 260, paint);
-                    mPoints = toArray(-gValues[1] * 18 + 360, gPointsY);
-                    cavas.drawLines(mPoints, paint);
+                    	if (values[1] > 5) values[1] = 5; 
+                    	if (values[1] < -5) values[1] = -5;
+                    	paint.setColor(mColors[1]);
+                    	cavas.drawText("Y-Axis : " + values[1] , 170, 260, paint);
+                    	mPoints = toArray(gCounter, -values[1] * 18 + 360, gPointsY);
+                    	cavas.drawLines(mPoints, paint);
 
-                    if (gValues[2] > 5) gValues[2] = 5; 
-                    if (gValues[2] < -5) gValues[2] = -5;
-                    paint.setColor(mColors[4]);
-                    cavas.drawText("Z-Axis : " + gValues[2] , 340, 260, paint);
-                    mPoints = toArray( -gValues[2] * 18 + 360, gPointsZ);
-                    cavas.drawLines(mPoints, paint);
+                    	if (values[2] > 5) values[2] = 5; 
+                    	if (values[2] < -5) values[2] = -5;
+                    	paint.setColor(mColors[4]);
+                    	cavas.drawText("Z-Axis : " + values[2] , 340, 260, paint);
+                    	mPoints = toArray( gCounter, -values[2] * 18 + 360, gPointsZ);
+                    	cavas.drawLines(mPoints, paint);
+                    	break;
                     
-                    // Compass values plot   
+                    case Sensor.TYPE_MAGNETIC_FIELD: 
+                    	// Compass values plot 
+                    	paint.setColor(mColors[2]);                       
+                    	cavas.drawText("X-Axis : " + values[0] , 5, 490, paint);        
+                    	mPoints = toArray( cCounter, -values[0]  + 590, cPointsX);
+                    	cavas.drawLines(mPoints, paint);
 
-                    paint.setColor(mColors[2]);                       
-                    cavas.drawText("X-Axis : " + cValues[0] , 5, 490, paint);        
-                    mPoints = toArray( -cValues[0]  + 590, cPointsX);
-                    cavas.drawLines(mPoints, paint);
-
-                    paint.setColor(mColors[1]);
-                    cavas.drawText("Y-Axis : " + cValues[1] , 170, 490, paint);
-                    mPoints = toArray( -cValues[1]  + 590, cPointsY);
-                    cavas.drawLines(mPoints, paint);
-
-                    paint.setColor(mColors[4]);
-                    cavas.drawText("Z-Axis : " + cValues[2] , 340, 490, paint);
-                    mPoints = toArray( -cValues[2]  + 590, cPointsZ);
-                    cavas.drawLines(mPoints, paint);
+                    	paint.setColor(mColors[1]);
+                    	cavas.drawText("Y-Axis : " + values[1] , 170, 490, paint);
+                    	mPoints = toArray( cCounter, -values[1]  + 590, cPointsY);
+                    	cavas.drawLines(mPoints, paint);
+                    
+                    	paint.setColor(mColors[4]);
+                    	cavas.drawText("Z-Axis : " + values[2] , 340, 490, paint);
+                    	mPoints = toArray( cCounter, -values[2]  + 590, cPointsZ);
+                    	cavas.drawLines(mPoints, paint);
+                    	break;
+                    }
                     
 
                     canvas.drawBitmap(mBitmap, 0, 0, null); 
                     }
             }
 
-    private float[] toArray(float y, ArrayList<Float> mPoints) {
+    private float[] toArray(int counter, float y, ArrayList<Float> mPoints) {
             points = new float[width * 4];              
         if (counter >= 350) {
                 for (int i = 7 ; i <= mPoints.size(); i +=4){
@@ -227,20 +220,22 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
         return points;
     }
     
-	@Override
-	public void surfaceChanged(SurfaceHolder holder, int format, int width,
-			int height) {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public void surfaceCreated(SurfaceHolder holder) {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public void surfaceDestroyed(SurfaceHolder holder) {
-		// TODO Auto-generated method stub
-		
-	}
+        @Override
+        public void surfaceChanged(SurfaceHolder holder, int format, int width,int height) {
+    		this.panelHeight = (float)height;
+    		this.panelWidth = (float)width;
+    		Canvas c = holder.lockCanvas();
+    		draw( c );
+    		holder.unlockCanvasAndPost( c );
+        }
+        @Override
+        public void surfaceCreated(SurfaceHolder holder) {
+    		MainActivity.graphView = this;
+                
+        }
+        @Override
+        public void surfaceDestroyed(SurfaceHolder holder) {
+        	MainActivity.graphView = this;
+                
+        }
 }
