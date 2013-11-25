@@ -1,5 +1,12 @@
 package cz.muni.fi.myapp;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
@@ -9,15 +16,22 @@ import android.content.pm.ActivityInfo;
 import android.graphics.Canvas;
 import android.os.Bundle;
 import android.os.DeadObjectException;
+import android.os.Environment;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.SurfaceHolder;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends Activity {
+	private static final int MENU_RECALIBRATE = 1;
+	private static final int MENU_EXPORT_CONFIG = 2;
 	public static GraphView graphView = null;
 	private boolean samplingServiceRunning = false;
 	private SServiceConnection sServiceConnection = null;
@@ -39,7 +53,34 @@ public class MainActivity extends Activity {
         sampleCounterTV = (TextView)findViewById( R.id.counter);
         graphView = (GraphView)findViewById( R.id.graphView);
         button = (Button)findViewById(R.id.button);
-        startSamplingService();  
+        startSService();  
+    }
+	
+    public boolean onCreateOptionsMenu(Menu menu) {
+        boolean result = super.onCreateOptionsMenu(menu);
+        menu.add( Menu.NONE, MENU_RECALIBRATE, Menu.NONE, R.string.recalib );
+        menu.add( Menu.NONE, MENU_EXPORT_CONFIG, Menu.NONE, R.string.export_config );
+        return result;
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected( MenuItem item ) {
+        switch ( item.getItemId() ) {
+                case MENU_RECALIBRATE: {
+              		stopSamplingService();
+            		File dir = getFilesDir();
+            		File calibFile = new File( dir, SService.CALIB_FILE );
+            		calibFile.delete();
+           			startSService();
+                	return true;            
+                }
+
+                case MENU_EXPORT_CONFIG: {
+                	exportCalibrationData();
+                	return true;
+                }
+        }
+        return false;
     }
 	
 	public static Button getButton(){
@@ -48,7 +89,7 @@ public class MainActivity extends Activity {
 
 	protected void onDestroy() {
     	super.onDestroy();
-    	releaseSamplingService();
+    	releaseSService();
     }
         
     private void bindSamplingService() {
@@ -58,7 +99,7 @@ public class MainActivity extends Activity {
     	bindService( i, sServiceConnection, Context.BIND_AUTO_CREATE);
    }
     
-    private void startSamplingService() {
+    private void startSService() {
     	if( samplingServiceRunning )        // shouldn't happen
     		stopSamplingService();
         Intent i = new Intent();
@@ -67,7 +108,7 @@ public class MainActivity extends Activity {
         samplingServiceRunning = true;
     }
         
-    private void releaseSamplingService() {
+    private void releaseSService() {
     	releaseCallbackOnService();
     	unbindService( sServiceConnection );          
     	sServiceConnection = null;
@@ -194,6 +235,26 @@ public class MainActivity extends Activity {
                 }
                 return stateName;
         }
+    
+    private void exportCalibrationData() {
+		File dir = getFilesDir();
+		File calibFile = new File( dir, SService.CALIB_FILE );
+  		File exportFile = new File( 
+  				Environment.getExternalStorageDirectory(), 
+  				SService.CALIB_FILE );
+		try {
+			BufferedReader rdr = new BufferedReader( new FileReader( calibFile ));
+			PrintWriter pw = new PrintWriter( new FileWriter( exportFile ));
+			String line = null;
+			while( ( line = rdr.readLine() ) != null ) {
+				pw.println( line );
+			}
+			pw.close();
+			rdr.close();
+		} catch( IOException ex ) {
+			Toast.makeText(this, R.string.ioerror, Toast.LENGTH_LONG);
+		}
+    }
     
     private Fusion.Stub fusion = new Fusion.Stub() {
             @Override
