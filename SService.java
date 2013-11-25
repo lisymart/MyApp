@@ -446,6 +446,7 @@ private double getCalibValue( String line ) {
             }
         });
     	if (touched) setState(ENGINESTATES_STATIONARY_CALIBRATING);
+    	touched = false;
     }
     
     private void initCompassCalibration() {
