@@ -6,7 +6,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
@@ -21,7 +20,6 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.SurfaceHolder;
 import android.view.View;
@@ -42,6 +40,8 @@ public class MainActivity extends Activity {
 	public String sampleCounterText = null;
 	private TextView statusMessageTV;
 	private static Button button;
+	private TextView stepCounter;
+	private int steps = 1;
 
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +53,10 @@ public class MainActivity extends Activity {
         sampleCounterTV = (TextView)findViewById( R.id.counter);
         graphView = (GraphView)findViewById( R.id.graphView);
         button = (Button)findViewById(R.id.button);
+        stepCounter = (TextView)findViewById( R.id.steps);
+        stepCounter.setText("No Steps taken yet.");
         startSService();  
+        
     }
 	
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -330,6 +333,12 @@ public class MainActivity extends Activity {
                                     holder.unlockCanvasAndPost(c);
                             }
                     }
+            }
+            
+            @Override
+            public void displayStepDetected(){
+            	stepCounter.setText(steps + " steps taken.");
+            	steps++;
             }
     };
 
