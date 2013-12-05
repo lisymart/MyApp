@@ -20,6 +20,12 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"     
         />
+<TextView
+        android:id="@+id/steps"
+        android:gravity="center"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"     
+        />
 <Button
   		android:id="@+id/button"
   		android:gravity="center"
