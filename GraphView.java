@@ -3,15 +3,15 @@ package cz.muni.fi.myapp;
 import java.util.ArrayList;
 
 import android.content.Context;
-import android.graphics.Bitmap;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
+import android.preference.PreferenceManager;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -19,7 +19,7 @@ import android.view.SurfaceView;
 public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
 	float panelHeight;
 	float panelWidth;
-    private Paint mPaint = new Paint();
+    private Paint paint = new Paint();
     private Path mPath = new Path();
     private RectF mRect = new RectF();
     private int mColors[] = new int[3 * 2];
@@ -37,8 +37,14 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
     private float x = 0;
     private float[]mPoints;
     private int counter = 0;
+    private static MovingAverageStepDetector mStepDetector;
 
-    public GraphView(Context context, AttributeSet attrs) {
+    public static MovingAverageStepDetector getmStepDetector() {
+		return mStepDetector;
+	}
+
+
+	public GraphView(Context context, AttributeSet attrs) {
     	super(context, attrs);
     	getHolder().addCallback(this);
     	setFocusable(true);          
@@ -50,7 +56,7 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
     	mColors[4] = Color.argb(192, 128, 64, 128);          // violet
     	mColors[5] = Color.argb(192, 255, 255, 64);          // yellow
 
-    	mPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
+    	paint.setFlags(Paint.ANTI_ALIAS_FLAG);
     	mRect.set(-0.5f, -0.5f, 0.5f, 0.5f);
     	mPath.arcTo(mRect, 0, 1000);  
     	
@@ -71,9 +77,36 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
     	cPointsY.add(Float.valueOf(380));
     	cPointsZ.add(Float.valueOf(0));
     	cPointsZ.add(Float.valueOf(380));
-    	this.setKeepScreenOn(true);
+    	this.setKeepScreenOn(true);  	
+    	
+    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        double movingAverage1 = MovingAverageStepDetector.MA1_WINDOW;
+        double movingAverage2 = MovingAverageStepDetector.MA2_WINDOW;
+        double powerCutoff = MovingAverageStepDetector.POWER_CUTOFF_VALUE;
+        if (prefs != null) {
+                try {
+                        movingAverage1 = Double.valueOf(prefs.getString(
+                                        "short_moving_average_window_preference", "0.2"));
+                } catch (NumberFormatException e) {
+                        e.printStackTrace();
+                }
+                try {
+                        movingAverage2 = Double.valueOf(prefs.getString(
+                                        "long_moving_average_window_preference", "1.0"));
+                } catch (NumberFormatException e) {
+                        e.printStackTrace();
+                }
+                try {
+                        powerCutoff = Double.valueOf(prefs.getString(
+                                        "step_detection_power_cutoff_preference", "1000"));
+                } catch (NumberFormatException e) {
+                        e.printStackTrace();
+                }
+        }
+        
+        mStepDetector = new MovingAverageStepDetector(movingAverage1, movingAverage2, powerCutoff);
     }
-
+    
 
     public void drawGraph(Canvas canvas,int sensorType, float[] values ) {
 		switch( sensorType ) {
@@ -89,7 +122,6 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
 
       
     public void drawGraph(Canvas canvas) {
-    	final Paint paint = mPaint;
     	canvas.drawColor(0xFFFFFFFF);
     	paint.setColor(0xFFAAAAAA);
     	canvas.drawLine(0, 130, width, 130, paint);
