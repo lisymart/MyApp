@@ -9,6 +9,9 @@ import java.io.PrintWriter;
 import java.util.Date;
 import java.util.List;
 
+import cz.muni.fi.R.Matrix;
+import cz.muni.fi.filters.LowPassFilter;
+import cz.muni.fi.myapp.MovingAverageStepDetector.MovingAverageStepDetectorState;
 import android.app.Service;
 import android.content.Intent;
 import android.hardware.Sensor;
@@ -73,7 +76,7 @@ public class SService extends Service implements SensorEventListener{
     public static final int EXT_MAGNETIC_FIELD_VECTOR = 4;
     public static final int NO_EXT_MAGNETIC_FIELD_VECTOR = 5;
     public static final double[] zero = {0, 0, 0};
-    
+   
     IIR gravitycompensatedangle_filter;
     private long graphTimestamp[];
     private int compassSubstate;
@@ -137,12 +140,15 @@ public class SService extends Service implements SensorEventListener{
     private boolean YReadyTransition = false;
     private boolean ZReadyTransition = false;
     private boolean touched = false;
-       
+    private LowPassFilter lpf = new LowPassFilter();
+    private MovingAverageStepDetector mStepDetector;
+    
     public int onStartCommand(Intent intent, int flags, int startId) {
            super.onStartCommand( intent, flags, startId );
            // just in case the activity-level service management fails :
            stopSampling();                
            sensorManager = (SensorManager)getSystemService( SENSOR_SERVICE );
+           mStepDetector = GraphView.getmStepDetector();
            startSampling();
            return START_NOT_STICKY;
     }
@@ -225,10 +231,12 @@ public class SService extends Service implements SensorEventListener{
         } else
                 setState( ENGINESTATES_WAIT_FOR_TOUCH );
         }
-        
+    
+   
     @Override
     public void onSensorChanged(SensorEvent event) {
          processSample( event );
+         
     }
     
     @Override
@@ -383,7 +391,7 @@ private double getCalibValue( String line ) {
     }
         
     private void processSample( SensorEvent sensorEvent ) {
-        float values[] = sensorEvent.values;
+        float values[] = sensorEvent.values.clone();
         if( values.length < 3 )
                 return;
         String sensorName = "n/a";
@@ -710,7 +718,7 @@ private double getCalibValue( String line ) {
     }    
     
     private void processMeasuring( long timeStamp, int sensorType, float values [] ) {
-            double dValues[] = new double[3];
+    	double dValues[] = new double[3];
         dValues[IDX_X] = (double)values[IDX_X];
         dValues[IDX_Y] = (double)values[IDX_Y];
         dValues[IDX_Z] = (double)values[IDX_Z];
@@ -727,7 +735,12 @@ private double getCalibValue( String line ) {
                                 double linAccel[] = vectorSub( dValues,gyroAccelVector);
                         if( DEBUG )
                                 captureFile.println( timeStamp+ ","+"linAccel"+ ","+ linAccel[IDX_X]+ ","+ linAccel[IDX_Y]+ ","+ linAccel[IDX_Z]);
-                            redraw( LINEAR_ACCELERATION_VECTOR, sensorType, linAccel);
+                        	double[] filtered = lpf.lpFilter(linAccel);
+                            redraw( LINEAR_ACCELERATION_VECTOR, sensorType,  filtered);
+                            float[] output = {(float)filtered[0], (float)filtered[1],(float)filtered[2] };
+                            mStepDetector.processAccelerometerValues(timeStamp, output);
+                            displayStepDetect(mStepDetector.getState());
+
                     }
                 }
         } else
@@ -814,6 +827,23 @@ private double getCalibValue( String line ) {
                     Log.d( LOG_TAG, "setStatus: cannot call back activity");
     }
     
+    
+    private void displayStepDetect(MovingAverageStepDetectorState state) {
+    	boolean stepDetected = false;
+        stepDetected = state.states[0];
+        
+    	if( fusion != null && stepDetected) {
+            try {
+                    fusion.displayStepDetected();
+            } catch( DeadObjectException ex ) {
+                    Log.e( LOG_TAG,"step() callback", ex );
+            } catch( RemoteException ex ) {
+                    Log.e( LOG_TAG, "RemoteException",ex );
+            }
+    	} else
+            Log.d(LOG_TAG, "redraw: cannot call back main activity");
+}
+   
     private void redraw( int type, int sensorType, double[] vals) {
                 long currentTime = System.currentTimeMillis();
                 long prevTimeStamp = graphTimestamp[type];
