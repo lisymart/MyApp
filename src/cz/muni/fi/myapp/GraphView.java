@@ -25,6 +25,7 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
     private int mColors[] = new int[3 * 2];
     private float val = 0 ;
     private int  width;
+    private int  height;
     ArrayList<Float> aPointsX = new ArrayList<Float>();
     private ArrayList<Float> aPointsY = new ArrayList<Float>();
     private ArrayList<Float> aPointsZ = new ArrayList<Float>();
@@ -32,7 +33,7 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
     private ArrayList<Float> cPointsY = new ArrayList<Float>();
     private ArrayList<Float> cPointsZ = new ArrayList<Float>();
     private float[] points ;
-    private float[] cVals = new float[3];
+    private float[] cVals = new float[3]; // for ext mag field
     private float[] aVals = new float[3];
     private float x = 0;
     private float[]mPoints;
@@ -62,6 +63,7 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
     	
     	DisplayMetrics metrics = this.getResources().getDisplayMetrics();
     	width = metrics.widthPixels;
+    	height = metrics.heightPixels;
     	mPoints = new float[width * 5];
     	
     	aPointsX.add(Float.valueOf(0));
@@ -110,7 +112,7 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
 
     public void drawGraph(Canvas canvas,int sensorType, float[] values ) {
 		switch( sensorType ) {
-		case SService.SENSORTYPE_COMPASS:
+		case SService.SENSORTYPE_COMPASS: // for ext mag field
 			cVals = values;
 			break;
 		case SService.SENSORTYPE_ACCEL:
@@ -123,81 +125,55 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
       
     public void drawGraph(Canvas canvas) {
     	canvas.drawColor(0xFFFFFFFF);
+    	int middle = height/2 - height/8;
     	paint.setColor(0xFFAAAAAA);
-    	canvas.drawLine(0, 130, width, 130, paint);
-    	canvas.drawLine(5, 40, 5, 220, paint);
-    	canvas.drawText("0", 7, 140, paint);
-    	canvas.drawText("10", 7, 50, paint);
-    	canvas.drawText("-10", 7, 220, paint);
+    	canvas.drawLine(0, middle, width, middle, paint);
+    	canvas.drawLine(5, middle - height/4 - height/16, 5, middle + height/4 + height/16, paint);
+    	canvas.drawText("0", 7, middle + 10, paint);
+    	canvas.drawText("10", 7, middle - height/4 - height/16 + 10, paint);
+    	canvas.drawText("-10", 7, middle + height/4 + height/16, paint);
     	canvas.drawText("Linear Acceleration values : ", 5, 15, paint);
-    	canvas.drawLine(0, 380, width, 380, paint);
-    	canvas.drawLine(5, 290, 5, 470, paint);
-    	canvas.drawText("0", 7, 390, paint);
-    	canvas.drawText("+val", 7, 300, paint);
-    	canvas.drawText("-val", 7, 470, paint);
-    	canvas.drawText("Extern Magnetic field values : ", 5, 265, paint);
-    	paint.setColor(mColors[0]);
-    	canvas.drawLine(0, 240, width, 240, paint);
-    	counter++;
-
+    	counter += 3;
+    	
+    	int coef = (height/4 + height/16) / 10;
+    	
     	// Linear Acceleration values
     	if (aVals[0] > 10) aVals[0] = 10; 
     	if (aVals[0] < -10) aVals[0] = -10;
-    	mPoints = toArray(-aVals[0] * 9 + 130, aPointsX);
+    	mPoints = toArray(-aVals[0] * coef + middle, aPointsX);
     	paint.setColor(mColors[2]);                       
     	canvas.drawText("X-Axis : " + aVals[0] , 5, 30, paint);
-    	canvas.drawLines(mPoints, paint); 
-				
+    	canvas.drawLines(mPoints, paint);    	
+    	
     	if (aVals[1] > 10) aVals[1] = 10; 
     	if (aVals[1] < -10) aVals[1] = -10;
-    	mPoints = toArray(-aVals[1] * 9 + 130, aPointsY);
+    	mPoints = toArray(-aVals[1] * coef + middle, aPointsY);
     	paint.setColor(mColors[1]);
     	canvas.drawText("Y-Axis : " + aVals[1] , 170, 30, paint);
     	canvas.drawLines(mPoints, paint);
 
     	if (aVals[2] > 10) aVals[2] = 10; 
     	if (aVals[2] < -10) aVals[2] = -10;
-    	mPoints = toArray(-aVals[2] * 9 + 130, aPointsZ);
+    	mPoints = toArray(-aVals[2] * coef + middle, aPointsZ);
     	paint.setColor(mColors[4]);
     	canvas.drawText("Z-Axis : " + aVals[2] , 340, 30, paint);
     	canvas.drawLines(mPoints,  paint); 
     	
-    	// Ext Mag Field values
-    	if (cVals[0] > 90) cVals[0] = 90; 
-    	if (cVals[0] < -90) cVals[0] = -90;
-    	paint.setColor(mColors[2]);                       
-    	canvas.drawText("X-Axis : " + cVals[0] , 5, 280, paint);        
-    	mPoints = toArray( -cVals[0]  + 380, cPointsX);
-    	canvas.drawLines(mPoints, paint);
-			
-    	if (cVals[1] > 90) cVals[1] = 90; 
-    	if (cVals[1] < -90) cVals[1] = -90;
-    	paint.setColor(mColors[1]);
-    	canvas.drawText("Y-Axis : " + cVals[1] , 170, 280, paint);
-    	mPoints = toArray( -cVals[1]  + 380, cPointsY);
-    	canvas.drawLines(mPoints, paint);
-    	
-    	if (cVals[2] > 90) cVals[2] = 90; 
-    	if (cVals[2] < -90) cVals[2] = -90;
-    	paint.setColor(mColors[4]);
-    	canvas.drawText("Z-Axis : " + cVals[2] , 340, 280, paint);
-    	mPoints = toArray( -cVals[2]  + 380, cPointsZ);
-    	canvas.drawLines(mPoints, paint);  
     }	
 
     private float[] toArray(float y, ArrayList<Float> mPoints) {
     	points = new float[width * 5];              
-        if (counter >= 350) {
+        if (counter >= width - 100) {
         	for (int i = 7 ; i <= mPoints.size(); i +=4){
         		val = mPoints.get(i);
         		mPoints.set(i-2, val);
         		mPoints.set(i-4, val);
         	}
-        	mPoints.set(mPoints.size() - 2, 350.f);
+        	mPoints.set(mPoints.size() - 2, (float) width-100);
         	mPoints.set(mPoints.size() - 1, y); 
         	
         } else {                
-        	x = counter - 1;
+        	x = counter - 3;
             if (mPoints.size() == 2) {
             	mPoints.add(x);
             	mPoints.add(y);
