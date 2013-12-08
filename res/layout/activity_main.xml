@@ -14,18 +14,27 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"     
         />
-<TextView
-        android:id="@+id/counter"
-        android:gravity="center"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"     
-        />
-<TextView
-        android:id="@+id/steps"
-        android:gravity="center"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"     
-        />
+
+<TableLayout
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content" 
+    android:stretchColumns="*">
+
+    <TableRow>
+        <TextView
+            android:id="@+id/counter"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/steps"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center" />
+    </TableRow>
+</TableLayout>
+
 <Button
   		android:id="@+id/button"
   		android:gravity="center"
