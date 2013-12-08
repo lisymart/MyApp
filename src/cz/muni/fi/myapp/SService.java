@@ -730,6 +730,9 @@ private double getCalibValue( String line ) {
                         gyroAccelVector = new double[3];
                     vectorCopy( gyroAccelVector, dValues );
                     redraw( NO_LINEAR_ACCELERATION_VECTOR, sensorType, zero);
+                    float[] output = {(float)zero[0], (float)zero[1],(float)zero[2] };
+                    mStepDetector.processAccelerometerValues(timeStamp, output);
+                    displayStepDetect(mStepDetector.getState());
                 } else {
                         if( gyroAccelVector != null ) {
                                 double linAccel[] = vectorSub( dValues,gyroAccelVector);
