@@ -264,7 +264,7 @@ public class MainActivity extends Activity {
             public void sampleCounter(int count) throws RemoteException {
                     Log.d( LOG_TAG, "sample count: "+count );
                     sampleCounterText = Integer.toString( count );
-                    sampleCounterTV.setText( sampleCounterText );
+                    sampleCounterTV.setText("sample " + sampleCounterText );
             }
 
             public void statusMessage( int newState ) {
