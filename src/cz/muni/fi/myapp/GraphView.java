@@ -133,7 +133,7 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
     	canvas.drawText("10", 7, middle - height/4 - height/16 + 10, paint);
     	canvas.drawText("-10", 7, middle + height/4 + height/16, paint);
     	canvas.drawText("Linear Acceleration values : ", 5, 15, paint);
-    	counter += 3;
+    	counter += 2;
     	
     	int coef = (height/4 + height/16) / 10;
     	
@@ -159,6 +159,13 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
     	canvas.drawText("Z-Axis : " + aVals[2] , 340, 30, paint);
     	canvas.drawLines(mPoints,  paint); 
     	
+    	// ext magnetic field
+    	if (cVals[0] != 0 || cVals[1] != 0 || cVals[2] != 0) {
+    		paint.setColor(mColors[0]);
+    		canvas.drawText("EXTERNAL MAGNETIC FIELD PRESENT!!" , width/2 - width/4, 45, paint);
+    	}
+    		
+    	
     }	
 
     private float[] toArray(float y, ArrayList<Float> mPoints) {
@@ -173,7 +180,7 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
         	mPoints.set(mPoints.size() - 1, y); 
         	
         } else {                
-        	x = counter - 3;
+        	x = counter - 2;
             if (mPoints.size() == 2) {
             	mPoints.add(x);
             	mPoints.add(y);
