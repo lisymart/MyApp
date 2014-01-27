@@ -10,6 +10,8 @@ import java.util.Date;
 import java.util.List;
 
 import cz.muni.fi.R.Matrix;
+import cz.muni.fi.filters.INS;
+import cz.muni.fi.filters.Kalman;
 import cz.muni.fi.filters.LowPassFilter;
 import cz.muni.fi.myapp.MovingAverageStepDetector.MovingAverageStepDetectorState;
 import android.app.Service;
@@ -25,6 +27,7 @@ import android.os.RemoteException;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.Toast;
 
 public class SService extends Service implements SensorEventListener{        
     static final String LOG_TAG = "Fusion";
@@ -142,11 +145,16 @@ public class SService extends Service implements SensorEventListener{
     private boolean touched = false;
     private LowPassFilter lpf = new LowPassFilter();
     private MovingAverageStepDetector mStepDetector;
+    private Kalman mKalman = new Kalman();
+    private float[] INIPos={0,0,5};
+    private float[] INIVel={0,0,0};
+    private float[] INICbn={1,0,0,0,1,0,0,0,1};
+    private INS mINS=new INS(INIPos, INIVel, INICbn);
     
     public int onStartCommand(Intent intent, int flags, int startId) {
            super.onStartCommand( intent, flags, startId );
            // just in case the activity-level service management fails :
-           stopSampling();                
+           stopSampling();   
            sensorManager = (SensorManager)getSystemService( SENSOR_SERVICE );
            mStepDetector = GraphView.getmStepDetector();
            startSampling();
@@ -170,6 +178,7 @@ public class SService extends Service implements SensorEventListener{
                 sensorManager.registerListener( this, gyroSensor, SensorManager.SENSOR_DELAY_GAME );
            } else {
                 Log.d( LOG_TAG, "Sensor(s) missing: accelSensor: "+ accelSensor+ "; compassSensor: "+  compassSensor+ "; gyroSensor: "+ gyroSensor);
+                Toast.makeText(getApplicationContext(), "Some sensors are missing. App cannot continue.", Toast.LENGTH_LONG).show();
            }
            captureFile = null;
            if( DEBUG ) {
