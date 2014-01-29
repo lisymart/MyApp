@@ -64,7 +64,7 @@ public class Kalman {
             //if anyone sends me some stationary imu data for the phone, I will gladly perform modelling on your behalf.
         }
         
-        public void Propagate(INS mINS, float dt) {
+        public void Propagate(INS mINS, double dt) {
                 //Compute the system matrix
                 A.zero();
                 N.zero();
@@ -148,7 +148,7 @@ public class Kalman {
             smat.set(2,1,vec.get(0));
         }
         
-        public void applyZupt(INS mINS, float[] BAcc, float[] BGyro) {
+        public void applyZupt(INS mINS, double[] BAcc, double[] BGyro) {
                 //Observation matrix
                 H.zero();
                 setsub(H,0,3,I,1);
@@ -168,7 +168,7 @@ public class Kalman {
                 }
         }
         
-        public void applyCupt(INS mINS, float[] BAcc, float[] BGyro, float[] UPos) {
+        public void applyCupt(INS mINS, double[] BAcc, double[] BGyro, double[] UPos) {
                 //Observation matrix
                 H.zero();
                 setsub(H,0,0,I,1);
