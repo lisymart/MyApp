@@ -23,7 +23,7 @@ public class INS {
         DenseMatrix64F mx_b=new DenseMatrix64F(3,3);
         DenseMatrix64F vr_a=new DenseMatrix64F(3,1);
         
-        public INS(float[] pos, float[] vel, float[] dcm) {
+        public INS(double[] pos, double[] vel, double[] dcm) {
                 int i;
                 for (i=0;i<3;i++) {
                         Pos_b.set(i,pos[i]);
@@ -45,12 +45,12 @@ public class INS {
                 }
         }
         
-        public void set_pos(float[] pos) {
+        public void set_pos(double[] pos) {
                 for (int i=0;i<3;i++)
                         Pos_b.set(i,pos[i]);
         }
         
-        public void set_vel(float[] vel) {
+        public void set_vel(double[] vel) {
                 for (int i=0;i<3;i++)
                         Vel_b.set(i,vel[i]);
         }
@@ -60,24 +60,30 @@ public class INS {
         }
         
         public double[] get_pos() {
-                return Pos_b.data;
+        	return Pos_b.data;
+
         }
         
-        public void get_posn(float[] out) {
+        public double[] get_vel() {
+            return Vel_b.data;
+        }
+    
+        
+        public void get_posn(double[] out) {
                 CommonOps.mult(Cbn, Pos_b, vr_a);
                 out[0]=(float) vr_a.get(0);
                 out[1]=(float) vr_a.get(1);
                 out[2]=(float) vr_a.get(2);
         }
         
-        public void get_gravity(float[] out) {
+        public void get_gravity(double[] out) {
                 out[0]=(float) gravity.get(0);
                 out[1]=(float) gravity.get(1);
                 out[2]=(float) gravity.get(2);
         }
         
         //Algorithms
-        public void update_attI(float[] gdat, float dt) {
+        public void update_attI(double[] gdat, double dt) {
                 rotv.set(0,gdat[0]*dt);
                 rotv.set(1,gdat[1]*dt);
                 rotv.set(2,gdat[2]*dt);
@@ -111,19 +117,20 @@ public class INS {
             }
         }
         
-        public void update_velI(float[] adat, float dt) {
+        public void update_velI(double[] adat, double dt) {
                 acc.set(0, adat[0]);
                 acc.set(1, adat[1]);
                 acc.set(2, adat[2]);
                 
                 //Specific force  (acc=acc+Cbn'*gravity)
+                gravity.set(2,1);
                 CommonOps.multAddTransA(Cbn, gravity, acc);
                 
                 //Update vel with specific force (Vel_b=Vel_b+dt*acc)
                 CommonOps.addEquals(Vel_b, dt, acc);
         }
         
-        public void update_velII(float[] gdat, float dt) {
+        public void update_velII(double[] gdat, double dt) {
                 gyro.set(0, gdat[0]);
                 gyro.set(1, gdat[1]);
                 gyro.set(2, gdat[2]);
@@ -133,7 +140,7 @@ public class INS {
                 CommonOps.multAdd(dt, mx_a, gyro, Vel_b); //Vel_b=Vel_b+dt*mx_a*gyro
         }
         
-        public void update_posI(float[] gdat, float dt) {
+        public void update_posI(double[] gdat, double dt) {
                 gyro.set(0, gdat[0]);
                 gyro.set(1, gdat[1]);
                 gyro.set(2, gdat[2]);
@@ -143,13 +150,13 @@ public class INS {
                 CommonOps.multAdd(dt, mx_a, gyro, Pos_b);
     }
         
-        public void update_posII(float dt) {
-                //Update pos with body vel (Pos_b=Pos_b+dt*Vel_b)
-                CommonOps.addEquals(Pos_b, dt, Vel_b);
+        public void update_posII(double dt) {
+        	//Update pos with body vel (Pos_b=Pos_b+dt*Vel_b)
+        	CommonOps.addEquals(Pos_b, dt, Vel_b);
         }
         
         public static void skew(DenseMatrix64F vec, DenseMatrix64F smat) {
-                smat.zero();
+        	smat.zero();
             smat.set(0,1,-vec.get(2));
             smat.set(0,2,vec.get(1));
             smat.set(1,0,vec.get(2));
@@ -177,7 +184,7 @@ public class INS {
         
         ///////////////////////////////////////////////////////////
         //Sensor Data Accumulator
-        class DataAccum {
+        public class DataAccum {
                 private DenseMatrix64F acacc=new DenseMatrix64F(3,1);
                 private DenseMatrix64F acgyro=new DenseMatrix64F(3,1);
                 private int acina=0, acing=0;        //Accumulator indexes
@@ -192,7 +199,7 @@ public class INS {
                         acing=0;
             }
                                 
-                public void addacc(float[] dat) {        //Updates the acc accumulator
+                public void addacc(double[] dat) {        //Updates the acc accumulator
                         acc.set(0, dat[0]);
                         acc.set(1, dat[1]);
                         acc.set(2, dat[2]);
@@ -201,7 +208,7 @@ public class INS {
                         acina++;
                 }
                 
-                public void addgyro(float[] dat) {        //Updates the gyro accumulator
+                public void addgyro(double[] dat) {        //Updates the gyro accumulator
                         gyro.set(0, dat[0]);
                         gyro.set(1, dat[1]);
                         gyro.set(2, dat[2]);
@@ -210,7 +217,7 @@ public class INS {
                         acing++;
                 }
                 
-                public void avacc(float[] out) { //Avarage of acc
+                public void avacc(double[] out) { //Avarage of acc
                         if (acina>0) 
                                 for (int i=0;i<3;i++)
                                         out[i]=(float) acacc.get(i)/acina;
@@ -218,7 +225,7 @@ public class INS {
                                 {out[0]=0;out[1]=0;out[2]=0;}
                 }
                 
-                public void avgyro(float[] out) { //Avarage of gyro
+                public void avgyro(double[] out) { //Avarage of gyro
                         if (acing>0) 
                                 for (int i=0;i<3;i++)
                                         out[i]=(float) acgyro.get(i)/acing;
