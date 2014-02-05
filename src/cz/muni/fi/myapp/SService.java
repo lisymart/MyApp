@@ -530,6 +530,7 @@ private double getCalibValue( String line ) {
                 gyroZDrift = gyroZPos / gyroMeasurementTime;
                 Log.d( LOG_TAG, "Gyro drifts: x: "+gyroXDrift+"; y: "+gyroYDrift+"; z: "+gyroZDrift);
                 initCompassCalibration();
+                
 //!!!!!                
                 mINS.get_gravity(vr_a);
                 mINS.accum.avacc(cBAcc);
@@ -538,9 +539,9 @@ private double getCalibValue( String line ) {
                 
                 mINS.accum.avgyro(cBGyro);
                 mINS.accum.clear();
-                mINS.set_pos(INIPos);
                
 //!!!!!                
+            
                 
                 setState( ENGINESTATES_COMPASS_CALIBRATING_XNEG);
                 Log.d( LOG_TAG, "Gyro calibration: "+ stationaryCalibratingGyroCounter+" samples; "+"gravity calibration: "+ stationaryCalibratingAccelCounter+" samples" );
@@ -746,7 +747,6 @@ private double getCalibValue( String line ) {
     
     private void processMeasuring( long timeStamp, int sensorType, float values [] ) {
     	double dValues[] = new double[3];
-    	
         dValues[IDX_X] = (double)values[IDX_X];
         dValues[IDX_Y] = (double)values[IDX_Y];
         dValues[IDX_Z] = (double)values[IDX_Z];
@@ -754,29 +754,18 @@ private double getCalibValue( String line ) {
         	if( accelLastTimeStamp > 0L ) {
         		double dt = (double)(timeStamp - accelLastTimeStamp) / 1000000000.0;
                 double accelLength = vectorLength( dValues );
+        
             if( ( accelLength > gravityNoMotionLowLimit ) &&( accelLength < gravityNoMotionHighLimit) ) {
                     // No motion acceleration - save the acceleration vector
                 if( gyroAccelVector == null )
                 	gyroAccelVector = new double[3];
                     vectorCopy( gyroAccelVector, dValues );    
                     
-//!!!           
-//                    float[] mx_a=new float[9];
-//                    float[] acc = {(float)gyroAccelVector[0], (float)gyroAccelVector[1], (float)gyroAccelVector[2]};
-//                    float[] mag = {(float)gyroCompassVector[0], (float)gyroCompassVector[1], (float)gyroCompassVector[2]};
-//                    SensorManager.getRotationMatrix(mx_a, null, acc, mag);
-//                    mINS.set_dcm(mx_a);
-//                    mINS.update_velI(gyroAccelVector, dt);
-//                    mINS.update_posII(dt);                    
-//                    //Update acc accum
-//                    mINS.accum.addacc(gyroAccelVector);    
-//                    mKalman.Propagate(mINS, dt);      
-//!!! 
-                    double[] pos = mINS.get_pos();
-                    Log.e("Position no motion", pos[0] + " " + pos[1] + " " + pos[2]);
-                    double[] vals = mINS.get_vel();    
+                    
+                    double[] vals = mINS.get_vel();
+                    
                     redraw( NO_LINEAR_ACCELERATION_VECTOR, sensorType, vals );
-                    float[] output = {(float)vals[0], (float)vals[1],(float)vals[2] };
+                    float[] output = {(float)zero[0], (float)zero[1],(float)zero[2] };
                     mStepDetector.processAccelerometerValues(timeStamp, output);
                     displayStepDetect(mStepDetector.getState());
                     
@@ -784,35 +773,32 @@ private double getCalibValue( String line ) {
                         if( gyroAccelVector != null ) {
                         	double linAccel[] = vectorSub( dValues, gyroAccelVector );
                         if( DEBUG )
-                        	captureFile.println( timeStamp+ ","+"linAccel"+ ","+ linAccel[IDX_X]+ ","+ linAccel[IDX_Y]+ ","+ linAccel[IDX_Z]);
-                        double[] filtered = lpf.lpFilter(linAccel);
-                        
+                        	captureFile.println( timeStamp+ ","+"linAccel"+ ","+ linAccel[IDX_X]+ ","+ linAccel[IDX_Y]+ ","+ linAccel[IDX_Z]);                        	
+                        double[] filtered = lpf.lpFilter(linAccel);                        
 //!!!                    
-
-                        float[] mx_a=new float[9];
-                        float[] acc = {(float)gyroAccelVector[0], (float)gyroAccelVector[1], (float)gyroAccelVector[2]};
-                        float[] mag = {(float)gyroCompassVector[0], (float)gyroCompassVector[1], (float)gyroCompassVector[2]};
-                        SensorManager.getRotationMatrix(mx_a, null, acc, mag);
-                        mINS.set_dcm(mx_a);
                         mINS.update_velI(filtered, dt);
-                        mINS.update_posII(dt);                        
+                        mINS.update_posII(dt);                    
                         //Update acc accum
-                        mINS.accum.addacc(filtered);  
-                        mKalman.Propagate(mINS, dt);
-                        double[] pos = mINS.get_pos();
-                        Log.e("Position motion", pos[0] + " " + pos[1] + " " + pos[2]);
-//!!! 
+                        mINS.accum.addacc(filtered);
                         double[] vals = mINS.get_vel();
-                        redraw( LINEAR_ACCELERATION_VECTOR, sensorType, vals );
+                        mKalman.Propagate(mINS, dt);                         
+                        
+                        
+                        double[] pos = mINS.get_pos();
+                    	captureFile.println( timeStamp+ ","+"position"+ ","+ pos[IDX_X]+ ","+ pos[IDX_Y]);
+
+ //!!!           
+                        redraw( LINEAR_ACCELERATION_VECTOR, sensorType, vals);
+                        
                         float[] output = {(float)vals[0], (float)vals[1],(float)vals[2] };
                         mStepDetector.processAccelerometerValues(timeStamp, output);
                         displayStepDetect(mStepDetector.getState());
 
                     }                        
-                }
-        	}
-        
+                }        	
+        	}      
         	accelLastTimeStamp = timeStamp;
+
         	} else
                 if( sensorType == SENSORTYPE_GYRO ) {
                 	if( gyroLastTimeStamp > 0L ) {
@@ -834,18 +820,24 @@ private double getCalibValue( String line ) {
                         rotz( gyroAccelVector,-dz);
                     }
 //!!!!!!!
-                    mINS.update_attI(new double[]{dx, dy, dz}, dt);
-                    mINS.update_velII(new double[]{dx, dy, dz}, dt);
-                    mINS.update_posI(new double[]{dx, dy, dz}, dt);
+                    double usage[] = new double[3];
+                    usage[0] = gyroNoiseLimiter( dValues[IDX_X] );
+                    usage[1] = gyroNoiseLimiter( dValues[IDX_Y] );
+                    usage[2] = gyroNoiseLimiter( dValues[IDX_Z] );
                     
+                    mINS.update_attI(usage, dt);
+                    mINS.update_velII(usage, dt);
+                    mINS.update_posI(usage, dt);                    
                     //Update acc accum
-                    mINS.accum.addgyro(new double[]{dx, dy, dz});
+                    mINS.accum.addgyro(usage);
+                    mKalman.Propagate(mINS, dt);
 //!!!!!!!!                    
                     if( DEBUG) {
                         if( gyroCompassVector != null ) 
                                 captureFile.println( timeStamp+","+"gyroCompassVector"+ ","+gyroCompassVector[IDX_X]+","+ gyroCompassVector[IDX_Y]+ ","+ gyroCompassVector[IDX_Z]);
                         if( gyroAccelVector != null )
                         	captureFile.println(  timeStamp+ ","+"gyroAccelVector"+","+gyroAccelVector[IDX_X]+","+ gyroAccelVector[IDX_Y]+","+gyroAccelVector[IDX_Z]);
+                        
                     }
                 }
                 gyroLastTimeStamp = timeStamp;
@@ -878,6 +870,8 @@ private double getCalibValue( String line ) {
                                         }
                             }
                 }
+        mINS.accum.clear();
+       
     }                
         
     private double vectorLength( double vec[] ) {
