@@ -786,6 +786,8 @@ private double getCalibValue( String line ) {
                         
                         double[] pos = mINS.get_pos();
                     	captureFile.println( timeStamp+ ","+"position"+ ","+ pos[IDX_X]+ ","+ pos[IDX_Y]);
+                    	
+                    	mINS.accum.clear();
 
  //!!!           
                         redraw( LINEAR_ACCELERATION_VECTOR, sensorType, vals);
@@ -831,6 +833,7 @@ private double getCalibValue( String line ) {
                     //Update acc accum
                     mINS.accum.addgyro(usage);
                     mKalman.Propagate(mINS, dt);
+                    mINS.accum.clear();
 //!!!!!!!!                    
                     if( DEBUG) {
                         if( gyroCompassVector != null ) 
@@ -870,7 +873,7 @@ private double getCalibValue( String line ) {
                                         }
                             }
                 }
-        mINS.accum.clear();
+        
        
     }                
         
