@@ -154,6 +154,7 @@ public class SService extends Service implements SensorEventListener{
     private double[] cBAcc=new double[3];
     private double[] cBGyro=new double[3];
     private double[] vr_a=new double[3];
+    private long ptProp=0, tProp=0;
     
     public int onStartCommand(Intent intent, int flags, int startId) {
            super.onStartCommand( intent, flags, startId );
@@ -781,13 +782,19 @@ private double getCalibValue( String line ) {
                         //Update acc accum
                         mINS.accum.addacc(filtered);
                         double[] vals = mINS.get_vel();
-                        mKalman.Propagate(mINS, dt);                         
-                        
                         
                         double[] pos = mINS.get_pos();
                     	captureFile.println( timeStamp+ ","+"position"+ ","+ pos[IDX_X]+ ","+ pos[IDX_Y]);
                     	
-                    	mINS.accum.clear();
+                        if (timeStamp > tProp) {
+                        	dt=(timeStamp-ptProp)/1000000000.0;
+                			ptProp=timeStamp;
+                        	
+                			mKalman.Propagate(mINS, dt); 
+                			mINS.accum.clear();
+                			
+                			tProp=(long) (timeStamp + 1000000000.0);
+                        }
 
  //!!!           
                         redraw( LINEAR_ACCELERATION_VECTOR, sensorType, vals);
@@ -832,8 +839,15 @@ private double getCalibValue( String line ) {
                     mINS.update_posI(usage, dt);                    
                     //Update acc accum
                     mINS.accum.addgyro(usage);
-                    mKalman.Propagate(mINS, dt);
-                    mINS.accum.clear();
+                    if (timeStamp > tProp) {
+                    	dt=(timeStamp-ptProp)/1000000000.0;
+            			ptProp=timeStamp;
+                    	
+            			mKalman.Propagate(mINS, dt); 
+            			mINS.accum.clear();
+            			
+            			tProp=(long) (timeStamp + 1000000000.0);
+                    }
 //!!!!!!!!                    
                     if( DEBUG) {
                         if( gyroCompassVector != null ) 
