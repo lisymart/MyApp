@@ -765,7 +765,7 @@ private double getCalibValue( String line ) {
 
                         redraw( LINEAR_ACCELERATION_VECTOR, sensorType, out);
                         
-                        float[] output = {(float)filtered[0], (float)filtered[1],(float)filtered[2] };
+                        float[] output = {(float)out[0], (float)out[1],(float)out[2] };
                         mStepDetector.processAccelerometerValues(timeStamp, output);
                         displayStepDetect(mStepDetector.getState());
 
