@@ -2,6 +2,7 @@ package cz.muni.fi.myapp;
 
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
+import android.util.Log;
 import cz.muni.fi.filters.CumulativeSignalPowerTD;
 import cz.muni.fi.filters.MovingAverageTD;
 
@@ -28,8 +29,9 @@ public class MovingAverageStepDetector extends StepDetector {
         public static final double MA1_WINDOW = 0.2;
         public static final double MA2_WINDOW = 5 * MA1_WINDOW;
         private static final long POWER_WINDOW = SECOND_IN_NANOSECONDS / 10;
-        public static final float POWER_CUTOFF_VALUE = 1000.0f;
         private static final double MAX_STRIDE_DURATION = 2.0; // in seconds
+        
+        public static final float POWER_CUTOFF_VALUE = 1000.0f;
         
         private double mWindowMa1;
         private double mWindowMa2;
@@ -75,9 +77,9 @@ public class MovingAverageStepDetector extends StepDetector {
                 return mPowerCutoff;
         }
 
-        public void processAccelerometerValues(long timestamp, float[] values) {
+        public float processAccelerometerValues(long timestamp, float[] values) {
 
-                float value = values[0] + values[1] + values[2];
+                float value = (float) Math.sqrt(values[0] * values[0] +  values[1] * values[1] + values[2] * values[2]);
 
                 // compute moving averages
                 maValues[0] = value;
@@ -89,7 +91,7 @@ public class MovingAverageStepDetector extends StepDetector {
 
                 // detect moving average crossover
                 stepDetected = false;
-                boolean newSwapState = maValues[1] > maValues[2];
+                boolean newSwapState = maValues[1] > maValues[2] && maValues[1]>1;
                 if (newSwapState != mMASwapState) {
                         mMASwapState = newSwapState;
                         if (mMASwapState) {
@@ -113,6 +115,7 @@ public class MovingAverageStepDetector extends StepDetector {
                         notifyOnStep(new StepEvent(1.0, strideDuration));
                 }
 
+                return maValues[1];
         }
 
         /**
@@ -142,4 +145,5 @@ public class MovingAverageStepDetector extends StepDetector {
                         }
                 }
         }
+
 }
