@@ -15,6 +15,7 @@ import cz.muni.fi.filters.*;
 import cz.muni.fi.myapp.MovingAverageStepDetector.MovingAverageStepDetectorState;
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -23,6 +24,7 @@ import android.os.DeadObjectException;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -146,7 +148,7 @@ public class SService extends Service implements SensorEventListener{
     private LowPassFilter lpf = new LowPassFilter();
     private MovingAverageStepDetector mStepDetector;
     private Kalman kalman = new Kalman(3,3);
-    private Matrix kalmanMatrix;
+    private double[] linAccel;
 
     
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -154,7 +156,12 @@ public class SService extends Service implements SensorEventListener{
            // just in case the activity-level service management fails :
            stopSampling();   
            sensorManager = (SensorManager)getSystemService( SENSOR_SERVICE );
-           mStepDetector = GraphView.getmStepDetector();
+
+           double movingAverage1 = MovingAverageStepDetector.MA1_WINDOW;
+           double movingAverage2 = MovingAverageStepDetector.MA2_WINDOW;
+           double powerCutoff = MovingAverageStepDetector.POWER_CUTOFF_VALUE;
+           mStepDetector = new MovingAverageStepDetector(movingAverage1, movingAverage2, powerCutoff);
+           
            startSampling();
            return START_NOT_STICKY;
     }
@@ -738,39 +745,29 @@ private double getCalibValue( String line ) {
                 if( gyroAccelVector == null )
                 	gyroAccelVector = new double[3];
                     vectorCopy( gyroAccelVector, dValues );    
-                    redraw( NO_LINEAR_ACCELERATION_VECTOR, sensorType, zero );
-                    float[] output = {(float)zero[0], (float)zero[1],(float)zero[2] };
-                    mStepDetector.processAccelerometerValues(timeStamp, output);
-                    displayStepDetect(mStepDetector.getState());
-                    
+                    linAccel = vectorSub( dValues, gyroAccelVector );                    
                 } else {
                         if( gyroAccelVector != null ) {
-                        	double linAccel[] = vectorSub( dValues, gyroAccelVector );
+                        	linAccel = vectorSub( dValues, gyroAccelVector );
                         if( DEBUG )
-                        	captureFile.println( timeStamp+ ","+"linAccel"+ ","+ linAccel[IDX_X]+ ","+ linAccel[IDX_Y]+ ","+ linAccel[IDX_Z]);                        	
-                        //Low pass filter
-                        double[] filtered = lpf.lpFilter(linAccel);             
-                        
+                        	captureFile.println( timeStamp+ ","+"linAccel"+ ","+ linAccel[IDX_X]+ ","+ linAccel[IDX_Y]+ ","+ linAccel[IDX_Z]);
+                        }
+                }
 //!!!!!
-                        Log.e("filtered", filtered[0] + " " + filtered[1] + " " + filtered[2]); 
-                        double[][] trans = {  {1, 0, 0}
-                        					, {0, 1, 0}
-                        					, {0, 0, 1}};
-                        
+            			//Low pass filter
+                        double[] filtered = lpf.lpFilter(linAccel);                      
+                        //Kalman filter
+                        double[][] trans = {  {1, 0, 0}	, {0, 1, 0}	, {0, 0, 1}};    
                         kalman.setTransition_matrix(new Matrix(trans));
                         kalman.Predict();
                         double[] out = (kalman.Correct(new Matrix(filtered, 3))).getRowPackedCopy();
-
 //!!!!!                        
-
-                        redraw( LINEAR_ACCELERATION_VECTOR, sensorType, out);
-                        
                         float[] output = {(float)out[0], (float)out[1],(float)out[2] };
-                        mStepDetector.processAccelerometerValues(timeStamp, output);
+                        float stepValue = mStepDetector.processAccelerometerValues(timeStamp, output);
                         displayStepDetect(mStepDetector.getState());
-
-                    }                        
-                }        	
+                        
+                        float value = (float) Math.sqrt(output[0] * output[0] +  output[1] * output[1] + output[2] * output[2]);
+                        redraw( LINEAR_ACCELERATION_VECTOR, sensorType,new double[]{value, 0, stepValue});
         	}      
         	accelLastTimeStamp = timeStamp;
 
@@ -876,7 +873,7 @@ private double getCalibValue( String line ) {
                     Log.e( LOG_TAG, "RemoteException",ex );
             }
     	} else
-            Log.d(LOG_TAG, "redraw: cannot call back main activity");
+            Log.d(LOG_TAG, "displayStepDetect: cannot call back main activity");
 }
    
     private void redraw( int type, int sensorType, double[] vals) {
