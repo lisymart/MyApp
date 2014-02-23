@@ -81,32 +81,7 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
     	cPointsZ.add(Float.valueOf(380));
     	this.setKeepScreenOn(true);  	
     	
-    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        double movingAverage1 = MovingAverageStepDetector.MA1_WINDOW;
-        double movingAverage2 = MovingAverageStepDetector.MA2_WINDOW;
-        double powerCutoff = MovingAverageStepDetector.POWER_CUTOFF_VALUE;
-        if (prefs != null) {
-                try {
-                        movingAverage1 = Double.valueOf(prefs.getString(
-                                        "short_moving_average_window_preference", "0.2"));
-                } catch (NumberFormatException e) {
-                        e.printStackTrace();
-                }
-                try {
-                        movingAverage2 = Double.valueOf(prefs.getString(
-                                        "long_moving_average_window_preference", "1.0"));
-                } catch (NumberFormatException e) {
-                        e.printStackTrace();
-                }
-                try {
-                        powerCutoff = Double.valueOf(prefs.getString(
-                                        "step_detection_power_cutoff_preference", "1000"));
-                } catch (NumberFormatException e) {
-                        e.printStackTrace();
-                }
-        }
-        
-        mStepDetector = new MovingAverageStepDetector(movingAverage1, movingAverage2, powerCutoff);
+    	
     }
     
 
@@ -125,38 +100,38 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
       
     public void drawGraph(Canvas canvas) {
     	canvas.drawColor(0xFFFFFFFF);
-    	int middle = height/2 - height/8;
+    	int middle = height/2 + height/4;
+    	int coef = (height/4 + height/16) / 2;
     	paint.setColor(0xFFAAAAAA);
     	canvas.drawLine(0, middle, width, middle, paint);
-    	canvas.drawLine(5, middle - height/4 - height/16, 5, middle + height/4 + height/16, paint);
+    	canvas.drawLine(5, middle - height/2 - height/8, 5, middle + height/32, paint);
+    	canvas.drawLine(0, middle - coef, width, middle - coef, paint);
+    	canvas.drawText("Step limit", width - 70, middle - coef - 10, paint);
     	canvas.drawText("0", 7, middle + 10, paint);
-    	canvas.drawText("10", 7, middle - height/4 - height/16 + 10, paint);
-    	canvas.drawText("-10", 7, middle + height/4 + height/16, paint);
+    	canvas.drawText("5", 7, middle - height/2 - height/8 + 10, paint);
     	canvas.drawText("Linear Acceleration values : ", 5, 15, paint);
-    	counter += 2;
+    	counter += 5;
     	
-    	int coef = (height/4 + height/16) / 10;
+    	
     	
     	// Linear Acceleration values
-    	if (aVals[0] > 10) aVals[0] = 10; 
-    	if (aVals[0] < -10) aVals[0] = -10;
+    	// x values
+    	paint.setColor(mColors[2]);  
+    	canvas.drawText("Vector length : " + aVals[0] , 5, 30, paint);
+    	if (aVals[0] > 5) aVals[0] = 4; 
+    	if (aVals[0] < -5) aVals[0] = -4;
     	mPoints = toArray(-aVals[0] * coef + middle, aPointsX);
-    	paint.setColor(mColors[2]);                       
-    	canvas.drawText("X-Axis : " + aVals[0] , 5, 30, paint);
     	canvas.drawLines(mPoints, paint);    	
-    	
-    	if (aVals[1] > 10) aVals[1] = 10; 
-    	if (aVals[1] < -10) aVals[1] = -10;
-    	mPoints = toArray(-aVals[1] * coef + middle, aPointsY);
-    	paint.setColor(mColors[1]);
-    	canvas.drawText("Y-Axis : " + aVals[1] , 170, 30, paint);
-    	canvas.drawLines(mPoints, paint);
 
-    	if (aVals[2] > 10) aVals[2] = 10; 
-    	if (aVals[2] < -10) aVals[2] = -10;
-    	mPoints = toArray(-aVals[2] * coef + middle, aPointsZ);
+    	//y values
+    	//
+    	
+    	//z values
     	paint.setColor(mColors[4]);
-    	canvas.drawText("Z-Axis : " + aVals[2] , 340, 30, paint);
+    	canvas.drawText("StepDetect value " + aVals[2] , 300, 30, paint);
+    	if (aVals[2] > 5) aVals[2] =  4; 
+    	if (aVals[2] < -5) aVals[2] = -4;
+    	mPoints = toArray(-aVals[2] * coef + middle, aPointsZ);    	
     	canvas.drawLines(mPoints,  paint); 
     	
     	// ext magnetic field
@@ -180,7 +155,7 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
         	mPoints.set(mPoints.size() - 1, y); 
         	
         } else {                
-        	x = counter - 2;
+        	x = counter - 5;
             if (mPoints.size() == 2) {
             	mPoints.add(x);
             	mPoints.add(y);
