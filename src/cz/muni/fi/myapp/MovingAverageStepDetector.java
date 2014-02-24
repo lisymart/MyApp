@@ -2,7 +2,6 @@ package cz.muni.fi.myapp;
 
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
-import android.util.Log;
 import cz.muni.fi.filters.CumulativeSignalPowerTD;
 import cz.muni.fi.filters.MovingAverageTD;
 
@@ -15,7 +14,6 @@ import cz.muni.fi.filters.MovingAverageTD;
  */
 public class MovingAverageStepDetector extends StepDetector {
         
-        private static final String TAG = "MovingAverageStepDetector";
         private float[] maValues;
         private MovingAverageTD[] ma;
         private CumulativeSignalPowerTD asp;
@@ -31,7 +29,7 @@ public class MovingAverageStepDetector extends StepDetector {
         private static final long POWER_WINDOW = SECOND_IN_NANOSECONDS / 10;
         private static final double MAX_STRIDE_DURATION = 2.0; // in seconds
         
-        public static final float POWER_CUTOFF_VALUE = 1000.0f;
+        public static float POWER_CUTOFF_VALUE = 1000.0f;
         
         private double mWindowMa1;
         private double mWindowMa2;
@@ -77,7 +75,7 @@ public class MovingAverageStepDetector extends StepDetector {
                 return mPowerCutoff;
         }
 
-        public float processAccelerometerValues(long timestamp, float[] values) {
+        public float[] processAccelerometerValues(long timestamp, float[] values) {
 
                 float value = (float) Math.sqrt(values[0] * values[0] +  values[1] * values[1] + values[2] * values[2]);
 
@@ -109,33 +107,31 @@ public class MovingAverageStepDetector extends StepDetector {
                         asp.reset();
                 }
 
-                // step event
-                if (stepDetected && !signalPowerCutoff) {
-                        strideDuration = getStrideDuration();
-                        notifyOnStep(new StepEvent(1.0, strideDuration));
-                }
+             // step event
+        		if (stepDetected && !signalPowerCutoff) {
+        			final long strideDuration = getStrideDuration(timestamp);
+        			if (strideDuration < MAX_STRIDE_DURATION) {
+        				notifyOnStep(new StepEvent(1.0, strideDuration));
+        				mLastStepTimestamp = timestamp;
+        			} else {
+        				signalPowerCutoff = true; //jen kvůli správnému obarvování v StepDetectionDemo
+        				mLastStepTimestamp = 0; //jinak by čas od posledního kroku stále rostl a vše by bylo false
+        			}
+        		}
 
-                return maValues[1];
+                return new float[]{ maValues[1], maValues[3]};
         }
 
-        /**
-         * call has side-effects, must call only when step is detected.
-         * 
-         * @return stride duration if the duration is less than MAX_STRIDE_DURATION,
-         *         NaN otherwise
-         */
-        private double getStrideDuration() {
-                // compute stride duration
-                long currentStepTimestamp = System.nanoTime();
-                double strideDuration;
-                strideDuration = (double) (currentStepTimestamp - mLastStepTimestamp)
-                                / SECOND_IN_NANOSECONDS;
-                if (strideDuration > MAX_STRIDE_DURATION) {
-                        strideDuration = Double.NaN;
-                }
-                mLastStepTimestamp = currentStepTimestamp;
-                return strideDuration;
-        }
+        /* 
+    	 * @return stride duration
+    	 */
+    	private long getStrideDuration(long currentTimestamp) {
+    		if (mLastStepTimestamp == 0) {
+    			mLastStepTimestamp = currentTimestamp;
+    		}
+    		
+    		return currentTimestamp - mLastStepTimestamp;
+    	}
 
         @Override
         public void onSensorChanged(SensorEvent event) {
