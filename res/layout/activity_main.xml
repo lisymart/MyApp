@@ -21,11 +21,15 @@
     android:stretchColumns="*">
 
     <TableRow>
-        <TextView
-            android:id="@+id/counter"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center" />
+		 <EditText
+   			android:id="@+id/editText1"
+  			android:layout_width="match_parent"
+    		android:layout_height="wrap_content"
+    		android:ems="10"
+    		android:inputType="number"
+    		android:visibility="gone" >
+    	<requestFocus />
+		</EditText>
 
         <TextView
             android:id="@+id/steps"
@@ -47,5 +51,8 @@
         android:id="@+id/graphView"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:visibility="gone"/>    
+        android:visibility="gone"/>
+
+
+    
 </LinearLayout>
