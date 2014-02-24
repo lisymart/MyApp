@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
@@ -18,12 +19,15 @@ import android.os.DeadObjectException;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.SurfaceHolder;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -41,6 +45,7 @@ public class MainActivity extends Activity {
 	private TextView statusMessageTV;
 	private static Button button;
 	private TextView stepCounter;
+	private EditText fieldCutoff;
 	private int steps = 1;
 
 	@Override
@@ -50,8 +55,25 @@ public class MainActivity extends Activity {
         bindSamplingService();   
         setContentView(R.layout.activity_main); 
         statusMessageTV = (TextView)findViewById( R.id.status );
-        sampleCounterTV = (TextView)findViewById( R.id.counter);
         graphView = (GraphView)findViewById( R.id.graphView);
+        fieldCutoff = (EditText)findViewById( R.id.editText1 );
+        fieldCutoff.addTextChangedListener(new TextWatcher() {
+    	    @Override
+    	    public void afterTextChanged( final Editable s){
+    	    	if (!s.toString().equals(""))
+    	    	MovingAverageStepDetector.POWER_CUTOFF_VALUE = Float.parseFloat(s.toString());
+    	    }
+
+			@Override
+			public void beforeTextChanged(CharSequence arg0, int arg1,int arg2, int arg3) {
+				// TODO Auto-generated method stub
+			}
+
+			@Override
+			public void onTextChanged(CharSequence arg0, int arg1, int arg2,int arg3) {
+				// TODO Auto-generated method stub
+			}
+    	});
         button = (Button)findViewById(R.id.button);
         stepCounter = (TextView)findViewById( R.id.steps);
         stepCounter.setText("No Steps taken yet.");
@@ -85,7 +107,7 @@ public class MainActivity extends Activity {
         }
         return false;
     }
-	
+
 	public static Button getButton(){
 		return button;
 	}
@@ -255,7 +277,7 @@ public class MainActivity extends Activity {
 			pw.close();
 			rdr.close();
 		} catch( IOException ex ) {
-			Toast.makeText(this, R.string.ioerror, Toast.LENGTH_LONG);
+			Toast.makeText(this, R.string.ioerror, Toast.LENGTH_LONG).show();
 		}
     }
     
@@ -264,7 +286,7 @@ public class MainActivity extends Activity {
             public void sampleCounter(int count) throws RemoteException {
                     Log.d( LOG_TAG, "sample count: "+count );
                     sampleCounterText = Integer.toString( count );
-                    sampleCounterTV.setText("sample " + sampleCounterText );
+
             }
 
             public void statusMessage( int newState ) {
@@ -279,46 +301,57 @@ public class MainActivity extends Activity {
                             case SService.ENGINESTATES_IDLE:
                             	graphView.setVisibility( View.GONE);
                             	button.setVisibility(View.GONE);
+                            	fieldCutoff.setVisibility(View.GONE);
                             	break;
                             case SService.ENGINESTATES_WAIT_FOR_TOUCH:
                             	graphView.setVisibility( View.GONE);
                             	button.setVisibility(View.VISIBLE);
+                            	fieldCutoff.setVisibility(View.GONE);
                             	break;
                             case SService.ENGINESTATES_STATIONARY_CALIBRATING:
                             	graphView.setVisibility( View.GONE);
                             	button.setVisibility(View.GONE);
+                            	fieldCutoff.setVisibility(View.GONE);
                             	break;
                             case SService.ENGINESTATES_COMPASS_CALIBRATING_XNEG:
                             	graphView.setVisibility( View.GONE);
                             	button.setVisibility(View.GONE);
+                            	fieldCutoff.setVisibility(View.GONE);
                             	break;
                             case SService.ENGINESTATES_COMPASS_CALIBRATING_XPOS:
                             	graphView.setVisibility( View.GONE);
                             	button.setVisibility(View.GONE);
+                            	fieldCutoff.setVisibility(View.GONE);
                             	break;
                             case SService.ENGINESTATES_COMPASS_CALIBRATING_YNEG:
                             	graphView.setVisibility( View.GONE);
                             	button.setVisibility(View.GONE);
+                            	fieldCutoff.setVisibility(View.GONE);
                             	break;
                             case SService.ENGINESTATES_COMPASS_CALIBRATING_YPOS:
                             	graphView.setVisibility( View.GONE);
                             	button.setVisibility(View.GONE);
+                            	fieldCutoff.setVisibility(View.GONE);
                             	break;
                             case SService.ENGINESTATES_COMPASS_CALIBRATING_ZNEG:
                             	graphView.setVisibility( View.GONE);
                             	button.setVisibility(View.GONE);
+                            	fieldCutoff.setVisibility(View.GONE);
                             	break;
                             case SService.ENGINESTATES_COMPASS_CALIBRATING_ZPOS:
                             	graphView.setVisibility( View.GONE);
                             	button.setVisibility(View.GONE);
+                            	fieldCutoff.setVisibility(View.GONE);
                             	break;
                             case SService.ENGINESTATES_COMPASS_CALIBRATING_FIN:
                             	graphView.setVisibility( View.GONE);
                             	button.setVisibility(View.GONE);
+                            	fieldCutoff.setVisibility(View.GONE);
                             	break;
                             case SService.ENGINESTATES_MEASURING:
                             	graphView.setVisibility( View.VISIBLE);
                             	button.setVisibility(View.GONE);
+                            	fieldCutoff.setVisibility(View.VISIBLE);
                             	break;
                     }
             }
