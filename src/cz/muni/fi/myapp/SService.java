@@ -6,7 +6,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -15,7 +14,6 @@ import cz.muni.fi.filters.*;
 import cz.muni.fi.myapp.MovingAverageStepDetector.MovingAverageStepDetectorState;
 import android.app.Service;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -24,7 +22,6 @@ import android.os.DeadObjectException;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.RemoteException;
-import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -145,7 +142,6 @@ public class SService extends Service implements SensorEventListener{
     private boolean YReadyTransition = false;
     private boolean ZReadyTransition = false;
     private boolean touched = false;
-    private LowPassFilter lpf = new LowPassFilter();
     private MovingAverageStepDetector mStepDetector;
     private Kalman kalman = new Kalman(3,3);
     private double[] linAccel;
@@ -754,13 +750,9 @@ private double getCalibValue( String line ) {
                         }
                 }
 //!!!!!
-            			//Low pass filter
-                        double[] filtered = lpf.lpFilter(linAccel);                      
                         //Kalman filter
-                        double[][] trans = {  {1, 0, 0}	, {0, 1, 0}	, {0, 0, 1}};    
-                        kalman.setTransition_matrix(new Matrix(trans));
                         kalman.Predict();
-                        double[] out = (kalman.Correct(new Matrix(filtered, 3))).getRowPackedCopy();
+                        double[] out = (kalman.Correct(new Matrix(linAccel, 3))).getRowPackedCopy();
 //!!!!!                        
                         float[] output = {(float)out[0], (float)out[1],(float)out[2] };
                         float stepValue = mStepDetector.processAccelerometerValues(timeStamp, output);
