@@ -3,13 +3,11 @@ package cz.muni.fi.myapp;
 import java.util.ArrayList;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
-import android.preference.PreferenceManager;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.view.SurfaceHolder;
@@ -39,6 +37,7 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
     private float[]mPoints;
     private int counter = 0;
     private static MovingAverageStepDetector mStepDetector;
+    private int posun = 20;
 
     public static MovingAverageStepDetector getmStepDetector() {
 		return mStepDetector;
@@ -100,15 +99,15 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
       
     public void drawGraph(Canvas canvas) {
     	canvas.drawColor(0xFFFFFFFF);
-    	int middle = height/2 + height/4;
+    	int middle = height/2 + height/4 - posun;
     	int coef = (height/4 + height/16) / 2;
     	paint.setColor(0xFFAAAAAA);
-    	canvas.drawLine(0, middle, width, middle, paint);
-    	canvas.drawLine(5, middle - height/2 - height/8, 5, middle + height/32, paint);
-    	canvas.drawLine(0, middle - coef, width, middle - coef, paint);
-    	canvas.drawText("Step limit", width - 70, middle - coef - 10, paint);
-    	canvas.drawText("0", 7, middle + 10, paint);
-    	canvas.drawText("5", 7, middle - height/2 - height/8 + 10, paint);
+    	canvas.drawLine(0, middle - posun, width, middle - posun, paint);
+    	canvas.drawLine(5, middle - height/2 - height/8 - posun, 5, middle + height/32 - posun, paint);
+    	canvas.drawLine(0, middle - coef - posun, width, middle - coef - posun, paint);
+    	canvas.drawText("Step limit", width - 70, middle - coef - 10 - posun, paint);
+    	canvas.drawText("0", 7, middle + 10 - posun, paint);
+    	canvas.drawText("5", 7, middle - height/2 - height/8 + 10 - posun, paint);
     	canvas.drawText("Linear Acceleration values : ", 5, 15, paint);
     	counter += 5;
     	
@@ -120,18 +119,23 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
     	canvas.drawText("Vector length : " + aVals[0] , 5, 30, paint);
     	if (aVals[0] > 5) aVals[0] = 4; 
     	if (aVals[0] < -5) aVals[0] = -4;
-    	mPoints = toArray(-aVals[0] * coef + middle, aPointsX);
+    	mPoints = toArray(-aVals[0] * coef + middle - posun, aPointsX);
     	canvas.drawLines(mPoints, paint);    	
 
     	//y values
-    	//
+    	paint.setColor(mColors[1]);  
+    	canvas.drawText("Cut-off : " + MovingAverageStepDetector.POWER_CUTOFF_VALUE , 170, 30, paint);
+    	if (aVals[1] > 5) aVals[1] = 4; 
+    	if (aVals[1] < -5) aVals[1] = -4;
+    	mPoints = toArray(-aVals[1] * coef + middle - posun, aPointsY);
+    	canvas.drawLines(mPoints, paint); 
     	
     	//z values
     	paint.setColor(mColors[4]);
     	canvas.drawText("StepDetect value " + aVals[2] , 300, 30, paint);
     	if (aVals[2] > 5) aVals[2] =  4; 
     	if (aVals[2] < -5) aVals[2] = -4;
-    	mPoints = toArray(-aVals[2] * coef + middle, aPointsZ);    	
+    	mPoints = toArray(-aVals[2] * coef + middle - posun, aPointsZ);    	
     	canvas.drawLines(mPoints,  paint); 
     	
     	// ext magnetic field
