@@ -10,5 +10,6 @@
 	<string name="recalib">Recalibrate</string>
 	<string name="export_config">Export configuration</string>
 	<string name="ioerror">I/O error occurred</string>
+	<string name="setCutoff">Set power cutoff value</string>
 	
 </resources>
