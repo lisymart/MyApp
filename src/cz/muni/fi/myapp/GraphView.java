@@ -124,7 +124,7 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
 
     	//y values
     	paint.setColor(mColors[1]);  
-    	canvas.drawText("Cut-off : " + MovingAverageStepDetector.POWER_CUTOFF_VALUE , 170, 30, paint);
+    	canvas.drawText("Cut-off : " + MovingAverageStepDetector.getmPowerCutoff() , 170, 30, paint);
     	if (aVals[1] > 5) aVals[1] = 4; 
     	if (aVals[1] < -5) aVals[1] = -4;
     	mPoints = toArray(-aVals[1] * coef + middle - posun, aPointsY);
