@@ -37,7 +37,7 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
     private float[]mPoints;
     private int counter = 0;
     private static MovingAverageStepDetector mStepDetector;
-    private int posun = 20;
+    private int posun = 0;
 
     public static MovingAverageStepDetector getmStepDetector() {
 		return mStepDetector;
@@ -115,20 +115,15 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
     	
     	// Linear Acceleration values
     	// x values
-    	paint.setColor(mColors[2]);  
-    	canvas.drawText("Vector length : " + aVals[0] , 5, 30, paint);
-    	if (aVals[0] > 5) aVals[0] = 4; 
-    	if (aVals[0] < -5) aVals[0] = -4;
-    	mPoints = toArray(-aVals[0] * coef + middle - posun, aPointsX);
-    	canvas.drawLines(mPoints, paint);    	
+    	//paint.setColor(mColors[2]);  
+    	//canvas.drawText("Vector length : " + aVals[0] , 5, 30, paint);
+    	//if (aVals[0] > 5) aVals[0] = 4; 
+    	//if (aVals[0] < -5) aVals[0] = -4;
+    	//mPoints = toArray(-aVals[0] * coef + middle - posun, aPointsX);
+    	//canvas.drawLines(mPoints, paint);    	
 
     	//y values
-    	paint.setColor(mColors[1]);  
-    	canvas.drawText("Cut-off : " + MovingAverageStepDetector.getmPowerCutoff() , 170, 30, paint);
-    	if (aVals[1] > 5) aVals[1] = 4; 
-    	if (aVals[1] < -5) aVals[1] = -4;
-    	mPoints = toArray(-aVals[1] * coef + middle - posun, aPointsY);
-    	canvas.drawLines(mPoints, paint); 
+    	//
     	
     	//z values
     	paint.setColor(mColors[4]);
