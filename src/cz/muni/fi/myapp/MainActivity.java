@@ -45,7 +45,7 @@ public class MainActivity extends Activity {
 	private static Button button;
 	private TextView stepCounter;
 	private EditText fieldCutoff;
-	private int steps = 1;
+	private int  steps = 1;
 
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,24 +55,6 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main); 
         statusMessageTV = (TextView)findViewById( R.id.status );
         graphView = (GraphView)findViewById( R.id.graphView);
-        fieldCutoff = (EditText)findViewById( R.id.editText1 );
-        fieldCutoff.addTextChangedListener(new TextWatcher() {
-    	    @Override
-    	    public void afterTextChanged( final Editable s){
-    	    	if (!s.toString().equals(""))
-    	    	MovingAverageStepDetector.setmPowerCutoff(Float.parseFloat(s.toString()));
-    	    }
-
-			@Override
-			public void beforeTextChanged(CharSequence arg0, int arg1,int arg2, int arg3) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onTextChanged(CharSequence arg0, int arg1, int arg2,int arg3) {
-				// TODO Auto-generated method stub
-			}
-    	});
         button = (Button)findViewById(R.id.button);
         stepCounter = (TextView)findViewById( R.id.steps);
         stepCounter.setText("No Steps taken yet.");
