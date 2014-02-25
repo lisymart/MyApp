@@ -755,11 +755,11 @@ private double getCalibValue( String line ) {
                         double[] out = (kalman.Correct(new Matrix(linAccel, 3))).getRowPackedCopy();
 //!!!!!                        
                         float[] output = {(float)out[0], (float)out[1],(float)out[2] };
-                        float[] stepValue = mStepDetector.processAccelerometerValues(timeStamp, output);
+                        float stepValue = mStepDetector.processAccelerometerValues(timeStamp, output);
                         displayStepDetect(mStepDetector.getState());
                         
                         float value = (float) Math.sqrt(output[0] * output[0] +  output[1] * output[1] + output[2] * output[2]);
-                        redraw( LINEAR_ACCELERATION_VECTOR, sensorType,new double[]{value, stepValue[1]/1000, stepValue[0]});
+                        redraw( LINEAR_ACCELERATION_VECTOR, sensorType,new double[]{value, 0, stepValue});
         	}      
         	accelLastTimeStamp = timeStamp;
 
