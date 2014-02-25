@@ -15,29 +15,12 @@
         android:layout_height="wrap_content"     
         />
 
-<TableLayout
+<TextView
+    android:id="@+id/steps"
     android:layout_width="fill_parent"
-    android:layout_height="wrap_content" 
-    android:stretchColumns="*">
+    android:layout_height="wrap_content"
+   android:gravity="center" />
 
-    <TableRow>
-		 <EditText
-   			android:id="@+id/editText1"
-  			android:layout_width="match_parent"
-    		android:layout_height="wrap_content"
-    		android:ems="10"
-    		android:inputType="number"
-    		android:visibility="gone" >
-    	<requestFocus />
-		</EditText>
-
-        <TextView
-            android:id="@+id/steps"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center" />
-    </TableRow>
-</TableLayout>
 
 <Button
   		android:id="@+id/button"
