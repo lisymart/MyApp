@@ -40,7 +40,6 @@ public class MainActivity extends Activity {
 	private ISService sService = null;
 	private String LOG_TAG = "Main activity";
 	private int state = SService.ENGINESTATES_IDLE;
-	private TextView sampleCounterTV;
 	public String sampleCounterText = null;
 	private TextView statusMessageTV;
 	private static Button button;
@@ -61,7 +60,7 @@ public class MainActivity extends Activity {
     	    @Override
     	    public void afterTextChanged( final Editable s){
     	    	if (!s.toString().equals(""))
-    	    	MovingAverageStepDetector.POWER_CUTOFF_VALUE = Float.parseFloat(s.toString());
+    	    	MovingAverageStepDetector.setmPowerCutoff(Float.parseFloat(s.toString()));
     	    }
 
 			@Override
