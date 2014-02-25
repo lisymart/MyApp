@@ -28,6 +28,7 @@ public class MovingAverageStepDetector extends StepDetector {
         public static final double MA2_WINDOW = 5 * MA1_WINDOW;
         private static final long POWER_WINDOW = SECOND_IN_NANOSECONDS / 10;
         private static final double MAX_STRIDE_DURATION = 2.0; // in seconds
+        private static final double  MIN_STRIDE_DURATION = 0.6;
         
         public static final float POWER_CUTOFF_VALUE = 1000.0f;
         
@@ -75,17 +76,7 @@ public class MovingAverageStepDetector extends StepDetector {
                 return mPowerCutoff;
         }
         
-        
-
-        public static float getmPowerCutoff() {
-			return mPowerCutoff;
-		}
-
-		public static  void setmPowerCutoff(float powerCutoff) {
-			mPowerCutoff = powerCutoff;
-		}
-
-		public float[] processAccelerometerValues(long timestamp, float[] values) {
+		public float processAccelerometerValues(long timestamp, float[] values) {
 
                 float value = (float) Math.sqrt(values[0] * values[0] +  values[1] * values[1] + values[2] * values[2]);
 
@@ -120,7 +111,7 @@ public class MovingAverageStepDetector extends StepDetector {
              // step event
         		if (stepDetected && !signalPowerCutoff) {
         			final long strideDuration = getStrideDuration(timestamp);
-        			if (strideDuration < MAX_STRIDE_DURATION) {
+        			if ( MIN_STRIDE_DURATION < strideDuration && strideDuration< MAX_STRIDE_DURATION) {
         				notifyOnStep(new StepEvent(1.0, strideDuration));
         				mLastStepTimestamp = timestamp;
         			} else {
@@ -129,7 +120,7 @@ public class MovingAverageStepDetector extends StepDetector {
         			}
         		}
 
-                return new float[]{ maValues[1], maValues[3]};
+                return maValues[1];
         }
 
         /* 
