@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -26,6 +27,12 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Toast;
+
+import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction;
+import org.apache.commons.math3.analysis.integration.BaseAbstractUnivariateIntegrator;
+import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;
+import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 
 public class SService extends Service implements SensorEventListener{        
     static final String LOG_TAG = "Fusion";
@@ -145,6 +152,9 @@ public class SService extends Service implements SensorEventListener{
     private MovingAverageStepDetector mStepDetector;
     private Kalman kalman = new Kalman(3,3);
     private double[] linAccel;
+    private double[] pos = {0,0,0};
+    private double[] lastOut = {0,0,0};
+
 
     
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -419,7 +429,7 @@ private double getCalibValue( String line ) {
                     sensorType = SENSORTYPE_GYRO;
             }
         if( captureFile != null ) {
-                captureFile.println( sensorEvent.timestamp+ ","+sensorName+ ","+values[0]+ ","+ values[1]+ ","+values[2]);
+              //  captureFile.println( sensorEvent.timestamp+ ","+sensorName+ ","+values[0]+ ","+ values[1]+ ","+values[2]);
         }
         updateSampleCounter();
         switch( state ) {
@@ -746,20 +756,38 @@ private double getCalibValue( String line ) {
                         if( gyroAccelVector != null ) {
                         	linAccel = vectorSub( dValues, gyroAccelVector );
                         if( DEBUG )
-                        	captureFile.println( timeStamp+ ","+"linAccel"+ ","+ linAccel[IDX_X]+ ","+ linAccel[IDX_Y]+ ","+ linAccel[IDX_Z]);
+                        //	captureFile.println( timeStamp+ ","+"linAccel"+ ","+ linAccel[IDX_X]+ ","+ linAccel[IDX_Y]+ ","+ linAccel[IDX_Z])
+                        	;
                         }
                 }
 //!!!!!
                         //Kalman filter
                         kalman.Predict();
                         double[] out = (kalman.Correct(new Matrix(linAccel, 3))).getRowPackedCopy();
-//!!!!!                        
                         float[] output = {(float)out[0], (float)out[1],(float)out[2] };
                         float stepValue = mStepDetector.processAccelerometerValues(timeStamp, output);
                         displayStepDetect(mStepDetector.getState());
                         
-                        float value = (float) Math.sqrt(output[0] * output[0] +  output[1] * output[1] + output[2] * output[2]);
-                        redraw( LINEAR_ACCELERATION_VECTOR, sensorType,new double[]{value, 0, stepValue});
+                        //doubleintegrating to get the distance                        
+                        double timeDiff =(double)(timeStamp - accelLastTimeStamp)/1000000000;
+                        double lower = (double)accelLastTimeStamp / 1000000000;
+                        double upper = (double)timeStamp / 1000000000;		
+                        SimpsonIntegrator si = new SimpsonIntegrator();
+                        UnivariateFunction uf = (UnivariateFunction)new PolynomialFunction(new double[]{out[0]});
+                        double vel = si.integrate(10, uf, lower, upper);
+                        UnivariateFunction uf2 = (UnivariateFunction)new PolynomialFunction(new double[]{vel});
+                        pos[0] += si.integrate(10, uf2, lower, upper);
+                        
+                        // alebo uplne jednoduchym vzorcom
+                        pos[1] += (out[0] - lastOut[0]) * timeDiff * timeDiff;
+                        lastOut[0] = out[0];
+                        
+                        captureFile.println( "integral " + pos[0] );
+                        captureFile.println( "primi " + pos[1] );
+                        
+                        Log.e("position x,", " " + pos[1]);
+                        redraw( LINEAR_ACCELERATION_VECTOR, sensorType,new double[]{0,0, pos[0]});
+//!!!!!
         	}      
         	accelLastTimeStamp = timeStamp;
 
@@ -786,9 +814,11 @@ private double getCalibValue( String line ) {
                  
                     if( DEBUG) {
                         if( gyroCompassVector != null ) 
-                                captureFile.println( timeStamp+","+"gyroCompassVector"+ ","+gyroCompassVector[IDX_X]+","+ gyroCompassVector[IDX_Y]+ ","+ gyroCompassVector[IDX_Z]);
+                              //  captureFile.println( timeStamp+","+"gyroCompassVector"+ ","+gyroCompassVector[IDX_X]+","+ gyroCompassVector[IDX_Y]+ ","+ gyroCompassVector[IDX_Z])
+                        	;
                         if( gyroAccelVector != null )
-                        	captureFile.println(  timeStamp+ ","+"gyroAccelVector"+","+gyroAccelVector[IDX_X]+","+ gyroAccelVector[IDX_Y]+","+gyroAccelVector[IDX_Z]);
+                        	//   captureFile.println(  timeStamp+ ","+"gyroAccelVector"+","+gyroAccelVector[IDX_X]+","+ gyroAccelVector[IDX_Y]+","+gyroAccelVector[IDX_Z])
+                        	;
                         
                     }
                 }
@@ -811,21 +841,21 @@ private double getCalibValue( String line ) {
                                                 dValues = vectorSub( dValues,compassOffset );
                                                 vectorCopy( gyroCompassVector, dValues );
                                                 if( DEBUG){
-                                                        captureFile.println( timeStamp+","+"correctedCompassVector"+","+gyroCompassVector[IDX_X]+","+gyroCompassVector[IDX_Y]+","+gyroCompassVector[IDX_Z]);
+                                                       // captureFile.println( timeStamp+","+"correctedCompassVector"+","+gyroCompassVector[IDX_X]+","+gyroCompassVector[IDX_Y]+","+gyroCompassVector[IDX_Z]);
                                                         redraw( NO_EXT_MAGNETIC_FIELD_VECTOR, sensorType, zero);
                                                 }
                                         } else {
                                                 double extMagneticField[] = vectorSub( dValues,gyroCompassVector);
                                                 if( DEBUG)
-                                                        captureFile.println( timeStamp+ ","+ "extMagneticField"+ ","+ extMagneticField[IDX_X]+ ","+extMagneticField[IDX_Y]+","+ extMagneticField[IDX_Z]);
+                                                      //  captureFile.println( timeStamp+ ","+ "extMagneticField"+ ","+ extMagneticField[IDX_X]+ ","+extMagneticField[IDX_Y]+","+ extMagneticField[IDX_Z]);
                                          redraw( EXT_MAGNETIC_FIELD_VECTOR, sensorType, extMagneticField);
                                         }
                             }
                 }
         
        
-    }                
-        
+    }  
+
     private double vectorLength( double vec[] ) {
             return Math.sqrt( ( vec[IDX_X]*vec[IDX_X] ) + ( vec[IDX_Y]*vec[IDX_Y] ) + ( vec[IDX_Z]*vec[IDX_Z] ) );
     }
