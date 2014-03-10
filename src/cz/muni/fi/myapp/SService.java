@@ -792,7 +792,7 @@ private double getCalibValue( String line ) {
                         
                         double position = pos[0] + pos[1] + pos[2];
                         captureFile.println( "integral " + position );
-                        redraw( LINEAR_ACCELERATION_VECTOR, sensorType,new double[]{0,0, stepValue});
+                        redraw( LINEAR_ACCELERATION_VECTOR, sensorType,new double[]{position, 0, stepValue});
 //!!!!!
         	}      
         	accelLastTimeStamp = timeStamp;
