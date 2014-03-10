@@ -6,7 +6,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -28,11 +27,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Toast;
 
-import org.apache.commons.math3.analysis.UnivariateFunction;
-import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction;
-import org.apache.commons.math3.analysis.integration.BaseAbstractUnivariateIntegrator;
-import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;
-import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 
 public class SService extends Service implements SensorEventListener{        
     static final String LOG_TAG = "Fusion";
@@ -153,11 +147,8 @@ public class SService extends Service implements SensorEventListener{
     private Kalman kalman = new Kalman(3,3);
     private double[] linAccel;
     private double[] pos = {0,0,0};
-    private double[] lastOut = {0,0,0};
     private double[] velocity = {0,0,0};
-    private SimpsonIntegrator simpsonIntegrator = new SimpsonIntegrator();
-
-
+    
     
     public int onStartCommand(Intent intent, int flags, int startId) {
            super.onStartCommand( intent, flags, startId );
@@ -770,28 +761,20 @@ private double getCalibValue( String line ) {
                         float stepValue = mStepDetector.processAccelerometerValues(timeStamp, output);
                         displayStepDetect(mStepDetector.getState());
                         
-                        //doubleintegrating to get the distance                        
-                        double lower = (double)accelLastTimeStamp / 1000000000;
-                        double upper = (double)timeStamp / 1000000000;		
+                       //doubleintegrating to get the distance  
+                        double timeDifference = (double)(timeStamp - accelLastTimeStamp)/1000000000;
                         
-                        UnivariateFunction ufx = (UnivariateFunction)new PolynomialFunction(new double[]{out[0]});
-                        UnivariateFunction ufy = (UnivariateFunction)new PolynomialFunction(new double[]{out[1]});
-                        UnivariateFunction ufz = (UnivariateFunction)new PolynomialFunction(new double[]{out[2]});
+                        velocity[0] = out[0] * timeDifference;
+                        velocity[1] = out[1] * timeDifference;
+                        velocity[2] = out[2] * timeDifference;
+                        pos[0] += velocity[0] * timeDifference + out[0] * timeDifference * timeDifference / 2;
+                        pos[1] += velocity[1] * timeDifference + out[1] * timeDifference * timeDifference / 2;
+                        pos[2] += velocity[2] * timeDifference + out[2] * timeDifference * timeDifference / 2;
                         
-                        velocity[0] = simpsonIntegrator.integrate(10, ufx, lower, upper);
-                        velocity[1] = simpsonIntegrator.integrate(10, ufy, lower, upper);
-                        velocity[2] = simpsonIntegrator.integrate(10, ufz, lower, upper);
-                        
-                        UnivariateFunction ufx2 = (UnivariateFunction)new PolynomialFunction(new double[]{velocity[0]});
-                        UnivariateFunction ufy2 = (UnivariateFunction)new PolynomialFunction(new double[]{velocity[1]});
-                        UnivariateFunction ufz2 = (UnivariateFunction)new PolynomialFunction(new double[]{velocity[2]});
-                        
-                        pos[0] += simpsonIntegrator.integrate(10, ufx2, lower, upper);
-                        pos[1] += simpsonIntegrator.integrate(10, ufy2, lower, upper);
-                        pos[2] += simpsonIntegrator.integrate(10, ufz2, lower, upper);
-                        
+                        float value = (float) Math.sqrt(out[0] * out[0] +  out[1] * out[1] + out[2] * out[2]);
                         double position = pos[0] + pos[1] + pos[2];
                         captureFile.println( "integral " + position );
+                        captureFile.println( "step " + value );
                         redraw( LINEAR_ACCELERATION_VECTOR, sensorType,new double[]{position, 0, stepValue});
 //!!!!!
         	}      
