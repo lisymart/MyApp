@@ -154,6 +154,8 @@ public class SService extends Service implements SensorEventListener{
     private double[] linAccel;
     private double[] pos = {0,0,0};
     private double[] lastOut = {0,0,0};
+    private double[] velocity = {0,0,0};
+    private SimpsonIntegrator simpsonIntegrator = new SimpsonIntegrator();
 
 
     
@@ -769,24 +771,28 @@ private double getCalibValue( String line ) {
                         displayStepDetect(mStepDetector.getState());
                         
                         //doubleintegrating to get the distance                        
-                        double timeDiff =(double)(timeStamp - accelLastTimeStamp)/1000000000;
                         double lower = (double)accelLastTimeStamp / 1000000000;
                         double upper = (double)timeStamp / 1000000000;		
-                        SimpsonIntegrator si = new SimpsonIntegrator();
-                        UnivariateFunction uf = (UnivariateFunction)new PolynomialFunction(new double[]{out[0]});
-                        double vel = si.integrate(10, uf, lower, upper);
-                        UnivariateFunction uf2 = (UnivariateFunction)new PolynomialFunction(new double[]{vel});
-                        pos[0] += si.integrate(10, uf2, lower, upper);
                         
-                        // alebo uplne jednoduchym vzorcom
-                        pos[1] += (out[0] - lastOut[0]) * timeDiff * timeDiff;
-                        lastOut[0] = out[0];
+                        UnivariateFunction ufx = (UnivariateFunction)new PolynomialFunction(new double[]{out[0]});
+                        UnivariateFunction ufy = (UnivariateFunction)new PolynomialFunction(new double[]{out[1]});
+                        UnivariateFunction ufz = (UnivariateFunction)new PolynomialFunction(new double[]{out[2]});
                         
-                        captureFile.println( "integral " + pos[0] );
-                        captureFile.println( "primi " + pos[1] );
+                        velocity[0] = simpsonIntegrator.integrate(10, ufx, lower, upper);
+                        velocity[1] = simpsonIntegrator.integrate(10, ufy, lower, upper);
+                        velocity[2] = simpsonIntegrator.integrate(10, ufz, lower, upper);
                         
-                        Log.e("position x,", " " + pos[1]);
-                        redraw( LINEAR_ACCELERATION_VECTOR, sensorType,new double[]{0,0, pos[0]});
+                        UnivariateFunction ufx2 = (UnivariateFunction)new PolynomialFunction(new double[]{velocity[0]});
+                        UnivariateFunction ufy2 = (UnivariateFunction)new PolynomialFunction(new double[]{velocity[1]});
+                        UnivariateFunction ufz2 = (UnivariateFunction)new PolynomialFunction(new double[]{velocity[2]});
+                        
+                        pos[0] += simpsonIntegrator.integrate(10, ufx2, lower, upper);
+                        pos[1] += simpsonIntegrator.integrate(10, ufy2, lower, upper);
+                        pos[2] += simpsonIntegrator.integrate(10, ufz2, lower, upper);
+                        
+                        double position = pos[0] + pos[1] + pos[2];
+                        captureFile.println( "integral " + position );
+                        redraw( LINEAR_ACCELERATION_VECTOR, sensorType,new double[]{0,0, stepValue});
 //!!!!!
         	}      
         	accelLastTimeStamp = timeStamp;
