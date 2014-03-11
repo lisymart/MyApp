@@ -148,6 +148,9 @@ public class SService extends Service implements SensorEventListener{
     private double[] linAccel;
     private double[] pos = {0,0,0};
     private double[] velocity = {0,0,0};
+    private float vectorSum = 0;
+    private float prevVectorSum = 0;
+    private float prevPrevVectorSum = 0;
     
     
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -760,21 +763,27 @@ private double getCalibValue( String line ) {
                         float[] output = {(float)out[0], (float)out[1],(float)out[2] };
                         float stepValue = mStepDetector.processAccelerometerValues(timeStamp, output);
                         displayStepDetect(mStepDetector.getState());
+                        vectorSum = (float) Math.sqrt(out[0] * out[0] +  out[1] * out[1] + out[2] * out[2]);
                         
+                        if (vectorSum > 0.4 && vectorSum - prevPrevVectorSum > 0) {
                        //doubleintegrating to get the distance  
                         double timeDifference = (double)(timeStamp - accelLastTimeStamp)/1000000000;
                         
-                        velocity[0] = out[0] * timeDifference;
-                        velocity[1] = out[1] * timeDifference;
-                        velocity[2] = out[2] * timeDifference;
+                        velocity[0] += out[0] * timeDifference;
+                        velocity[1] += out[1] * timeDifference;
+                        velocity[2] += out[2] * timeDifference;
                         pos[0] += velocity[0] * timeDifference + out[0] * timeDifference * timeDifference / 2;
                         pos[1] += velocity[1] * timeDifference + out[1] * timeDifference * timeDifference / 2;
                         pos[2] += velocity[2] * timeDifference + out[2] * timeDifference * timeDifference / 2;
+                        } else {
+                        	velocity[1] = 0;
+                        }
                         
-                        float value = (float) Math.sqrt(out[0] * out[0] +  out[1] * out[1] + out[2] * out[2]);
-                        double position = pos[0] + pos[1] + pos[2];
+                        prevPrevVectorSum = prevVectorSum;
+                        prevVectorSum = vectorSum;
+                        double position = pos[1];
                         captureFile.println( "integral " + position );
-                        captureFile.println( "step " + value );
+                        captureFile.println( "step " + vectorSum );
                         redraw( LINEAR_ACCELERATION_VECTOR, sensorType,new double[]{position, 0, stepValue});
 //!!!!!
         	}      
