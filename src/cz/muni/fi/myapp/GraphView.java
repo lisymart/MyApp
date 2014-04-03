@@ -1,4 +1,4 @@
-package cz.muni.fi.myapp;
+package cz.muni.fi.pedometer.main;
 
 import java.util.ArrayList;
 
@@ -101,22 +101,23 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
     	canvas.drawColor(0xFFFFFFFF);
     	int middle = height/2 + height/4 - posun;
     	int coef = (height/4 + height/16) / 2;
+    	double stepLimit = MovingAverageStepDetector.STEP_LIMIT;
     	paint.setColor(0xFFAAAAAA);
     	canvas.drawLine(0, middle - posun, width, middle - posun, paint);
     	canvas.drawLine(5, middle - height/2 - height/8 - posun, 5, middle + height/32 - posun, paint);
-    	canvas.drawLine(0, middle - coef - posun, width, middle - coef - posun, paint);
-    	canvas.drawText("Step limit", width - 70, middle - coef - 10 - posun, paint);
+    	canvas.drawLine(0, middle - Math.round(coef*stepLimit) - posun, width, middle - Math.round(coef*stepLimit) - posun, paint);
+    	canvas.drawText("Step limit", width - 70, middle - Math.round(coef*stepLimit) - 10 - posun, paint);
     	canvas.drawText("0", 7, middle + 10 - posun, paint);
     	canvas.drawText("5", 7, middle - height/2 - height/8 + 10 - posun, paint);
-    	canvas.drawText("Linear Acceleration values : ", 5, 15, paint);
+    	canvas.drawText("Distance and acceleration values : ", 5, 15, paint);
     	counter += 5;
     	
     	
     	
     	// Linear Acceleration values
     	// x values
-    	//paint.setColor(mColors[2]);  
-    	//canvas.drawText("Vector length : " + aVals[0] , 5, 30, paint);
+    	paint.setColor(mColors[2]);  
+    	canvas.drawText("Integral : " + aVals[0] + " m.", 5, 30, paint);
     	//if (aVals[0] > 5) aVals[0] = 4; 
     	//if (aVals[0] < -5) aVals[0] = -4;
     	//mPoints = toArray(-aVals[0] * coef + middle - posun, aPointsX);
@@ -124,9 +125,11 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback{
 
     	//y values
     	//
+    	paint.setColor(mColors[0]);  
+    	canvas.drawText("Multipled : " + aVals[1] + " m.", 175, 30, paint);
     	
     	//z values
-    	paint.setColor(mColors[4]);
+    	paint.setColor(mColors[1]);
     	canvas.drawText("StepDetect value " + aVals[2] , 300, 30, paint);
     	if (aVals[2] > 5) aVals[2] =  4; 
     	if (aVals[2] < -5) aVals[2] = -4;
