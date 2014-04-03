@@ -1,4 +1,4 @@
-package cz.muni.fi.myapp;
+package cz.muni.fi.pedometer.main;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -9,9 +9,11 @@ import java.io.PrintWriter;
 import java.util.Date;
 import java.util.List;
 
-import cz.muni.fi.R.Matrix;
-import cz.muni.fi.filters.*;
-import cz.muni.fi.myapp.MovingAverageStepDetector.MovingAverageStepDetectorState;
+import cz.muni.fi.pedometer.res.Matrix;
+import cz.muni.fi.pedometer.filters.*;
+import cz.muni.fi.pedometer.main.MovingAverageStepDetector.MovingAverageStepDetectorState;
+import cz.muni.fi.pedometer.main.Fusion;
+import cz.muni.fi.pedometer.main.ISService;
 import android.app.Service;
 import android.content.Intent;
 import android.hardware.Sensor;
@@ -78,6 +80,7 @@ public class SService extends Service implements SensorEventListener{
     public static final int EXT_MAGNETIC_FIELD_VECTOR = 4;
     public static final int NO_EXT_MAGNETIC_FIELD_VECTOR = 5;
     public static final double[] zero = {0, 0, 0};
+    public static final double STEP_LENGTH = 0.62;
    
     IIR gravitycompensatedangle_filter;
     private long graphTimestamp[];
@@ -151,7 +154,9 @@ public class SService extends Service implements SensorEventListener{
     private float vectorSum = 0;
     private float prevVectorSum = 0;
     private float prevPrevVectorSum = 0;
-    
+    private int countSteps = 0;
+    private double [] prevVelocity = {0,0,0};
+    private double [] prevOut = {0,0,0};
     
     public int onStartCommand(Intent intent, int flags, int startId) {
            super.onStartCommand( intent, flags, startId );
@@ -240,6 +245,9 @@ public class SService extends Service implements SensorEventListener{
         gyroYPos = 0.0;
         gyroZPos = 0.0;
         gyroLastTimeStamp = 0L;
+        countSteps = 0;
+        prevVelocity[0] = 0; prevVelocity[1] = 0; prevVelocity[2] = 0; ;
+        prevOut[0] = 0; prevOut[1] = 0; prevOut[2] = 0;
         if( readStoredCalibrationParameters() ) {
                 initCompassCalibration();
                 initMeasuring();
@@ -769,22 +777,28 @@ private double getCalibValue( String line ) {
                        //doubleintegrating to get the distance  
                         double timeDifference = (double)(timeStamp - accelLastTimeStamp)/1000000000;
                         
-                        velocity[0] += out[0] * timeDifference;
-                        velocity[1] += out[1] * timeDifference;
-                        velocity[2] += out[2] * timeDifference;
-                        pos[0] += velocity[0] * timeDifference + out[0] * timeDifference * timeDifference / 2;
-                        pos[1] += velocity[1] * timeDifference + out[1] * timeDifference * timeDifference / 2;
-                        pos[2] += velocity[2] * timeDifference + out[2] * timeDifference * timeDifference / 2;
+                        velocity[0] += timeDifference * (prevOut[0] + out[0])/2;
+                        velocity[1] += timeDifference * (prevOut[1] + out[1])/2;
+                        velocity[2] += timeDifference * (prevOut[2] + out[2])/2;
+                        prevOut = out;
+                        pos[0] += timeDifference * (prevVelocity[0] + velocity[0])/2;
+                        pos[1] += timeDifference * (prevVelocity[1] + velocity[1])/2;
+                        pos[2] += timeDifference * (prevVelocity[2] + velocity[2])/2;
+                        prevVelocity = velocity;
                         } else {
                         	velocity[1] = 0;
                         }
                         
+                        if (mStepDetector.getState().states[0]) countSteps++;
                         prevPrevVectorSum = prevVectorSum;
                         prevVectorSum = vectorSum;
-                        double position = pos[1];
-                        captureFile.println( "integral " + position );
+                        double integralDistance = pos[1];
+                        double multipledDistance = countSteps * STEP_LENGTH; 
+                        captureFile.println( "integral " + integralDistance );
+                        captureFile.println( "multipled " + multipledDistance );
                         captureFile.println( "step " + vectorSum );
-                        redraw( LINEAR_ACCELERATION_VECTOR, sensorType,new double[]{position, 0, stepValue});
+                        
+                        redraw( LINEAR_ACCELERATION_VECTOR, sensorType,new double[]{integralDistance, multipledDistance, stepValue});
 //!!!!!
         	}      
         	accelLastTimeStamp = timeStamp;
