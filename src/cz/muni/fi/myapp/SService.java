@@ -151,9 +151,8 @@ public class SService extends Service implements SensorEventListener{
     private double[] linAccel;
     private double[] pos = {0,0,0};
     private double[] velocity = {0,0,0};
-    private float vectorSum = 0;
-    private float prevVectorSum = 0;
-    private float prevPrevVectorSum = 0;
+    private float prevStepValue = 0;
+    private float prevPrevStepValue = 0;
     private int countSteps = 0;
     private double [] prevVelocity = {0,0,0};
     private double [] prevOut = {0,0,0};
@@ -771,9 +770,8 @@ private double getCalibValue( String line ) {
                         float[] output = {(float)out[0], (float)out[1],(float)out[2] };
                         float stepValue = mStepDetector.processAccelerometerValues(timeStamp, output);
                         displayStepDetect(mStepDetector.getState());
-                        vectorSum = (float) Math.sqrt(out[0] * out[0] +  out[1] * out[1] + out[2] * out[2]);
-                        
-                        if (vectorSum > 0.4 && vectorSum - prevPrevVectorSum > 0) {
+                                                
+                        if (stepValue > 0.4 && stepValue - prevPrevStepValue > 0) {
                        //doubleintegrating to get the distance  
                         double timeDifference = (double)(timeStamp - accelLastTimeStamp)/1000000000;
                         
@@ -790,13 +788,13 @@ private double getCalibValue( String line ) {
                         }
                         
                         if (mStepDetector.getState().states[0]) countSteps++;
-                        prevPrevVectorSum = prevVectorSum;
-                        prevVectorSum = vectorSum;
+                        prevPrevStepValue = prevStepValue;
+                        prevStepValue = stepValue;
                         double integralDistance = pos[1];
                         double multipledDistance = countSteps * STEP_LENGTH; 
                         captureFile.println( "integral " + integralDistance );
                         captureFile.println( "multipled " + multipledDistance );
-                        captureFile.println( "step " + vectorSum );
+                        captureFile.println( "acceleration " + stepValue );
                         
                         redraw( LINEAR_ACCELERATION_VECTOR, sensorType,new double[]{integralDistance, multipledDistance, stepValue});
 //!!!!!
