@@ -156,6 +156,7 @@ public class SService extends Service implements SensorEventListener{
     private int countSteps = 0;
     private double [] prevVelocity = {0,0,0};
     private double [] prevOut = {0,0,0};
+    private double integralDistance = 0;
     
     public int onStartCommand(Intent intent, int flags, int startId) {
            super.onStartCommand( intent, flags, startId );
@@ -247,6 +248,9 @@ public class SService extends Service implements SensorEventListener{
         countSteps = 0;
         prevVelocity[0] = 0; prevVelocity[1] = 0; prevVelocity[2] = 0; ;
         prevOut[0] = 0; prevOut[1] = 0; prevOut[2] = 0;
+        velocity[0] = 0; velocity[1] = 0; velocity[2] = 0;
+        pos[0] = 0; pos[1] = 0; pos[2] = 0;
+        integralDistance = 0;
         if( readStoredCalibrationParameters() ) {
                 initCompassCalibration();
                 initMeasuring();
@@ -766,15 +770,17 @@ private double getCalibValue( String line ) {
 //!!!!!
                         //Kalman filter
                         kalman.Predict();
-                        double[] out = (kalman.Correct(new Matrix(linAccel, 3))).getRowPackedCopy();
+                        Matrix accelMatrix = new Matrix(linAccel, 3);
+                        double[] out = kalman.Correct(accelMatrix).getRowPackedCopy();
                         float[] output = {(float)out[0], (float)out[1],(float)out[2] };
                         float stepValue = mStepDetector.processAccelerometerValues(timeStamp, output);
                         displayStepDetect(mStepDetector.getState());
                                                 
-                        if (stepValue > 0.4 && stepValue - prevPrevStepValue > 0) {
+                        
                        //doubleintegrating to get the distance  
                         double timeDifference = (double)(timeStamp - accelLastTimeStamp)/1000000000;
                         
+                        if (stepValue > prevPrevStepValue && stepValue>0.4) {
                         velocity[0] += timeDifference * (prevOut[0] + out[0])/2;
                         velocity[1] += timeDifference * (prevOut[1] + out[1])/2;
                         velocity[2] += timeDifference * (prevOut[2] + out[2])/2;
@@ -784,13 +790,15 @@ private double getCalibValue( String line ) {
                         pos[2] += timeDifference * (prevVelocity[2] + velocity[2])/2;
                         prevVelocity = velocity;
                         } else {
+                        	velocity[0] = 0;
                         	velocity[1] = 0;
+                        	velocity[2] = 0;
                         }
                         
                         if (mStepDetector.getState().states[0]) countSteps++;
                         prevPrevStepValue = prevStepValue;
                         prevStepValue = stepValue;
-                        double integralDistance = pos[1];
+                        integralDistance =  pos[0] + pos[1] + pos[2];
                         double multipledDistance = countSteps * STEP_LENGTH; 
                         captureFile.println( "integral " + integralDistance );
                         captureFile.println( "multipled " + multipledDistance );
