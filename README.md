@@ -1,3 +1,3 @@
-pedometer-bakalarka
-===================
-Na poznámky a pripomienky.
+Pedometer
+==================
+This project contains source files of working Pedometer system. 
