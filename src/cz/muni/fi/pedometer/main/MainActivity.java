@@ -56,6 +56,7 @@ public class MainActivity extends Activity {
         statusMessageTV = (TextView)findViewById( R.id.status );
         graphView = (GraphView)findViewById( R.id.graphView);
         button = (Button)findViewById(R.id.button);
+        button.setVisibility(View.VISIBLE);
         stepCounter = (TextView)findViewById( R.id.steps);
         stepCounter.setText("No Steps taken yet.");
         startSService();  
